@@ -211,7 +211,7 @@ internal class Overlay : Window
         {
             for(var i = 1; i <= Math.Min(maxInstances, 9); i++)
             {
-                var name = $"Instance {TaskChangeInstance.InstanceNumbers[i]}";
+                var name = $"副本区 {TaskChangeInstance.InstanceNumbers[i]}";
                 ResizeButton(name);
                 var d = S.InstanceHandler.GetInstance() == i;
                 if(ImGuiEx.Button(name, ButtonSizeInstance, !d))

@@ -71,6 +71,7 @@ public unsafe class Lifestream : IDalamudPlugin
     {
         P = this;
         ECommonsMain.Init(pluginInterface, this, Module.SplatoonAPI);
+#if !DEBUG
         if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
         {
             Svc.NotificationManager.AddNotification(new Notification()
@@ -81,7 +82,7 @@ public unsafe class Lifestream : IDalamudPlugin
             });
             return;
         }
-
+#endif
         new TickScheduler(delegate
         {
             Config = EzConfig.Init<Config>();
@@ -434,13 +435,14 @@ public unsafe class Lifestream : IDalamudPlugin
 
     public void Dispose()
     {
+#if !DEBUG
         if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
         {
             ECommonsMain.Dispose();
             P = null;
             return;
         }
-
+#endif
         Svc.Framework.Update -= Framework_Update;
         Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
         Memory.Dispose();
