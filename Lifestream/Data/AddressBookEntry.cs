@@ -51,17 +51,17 @@ public class AddressBookEntry
         };
     }
 
-    public bool ShouldSerializeApartment() => PropertyType == PropertyType.Apartment;
-    public bool ShouldSerializeApartmentSubdivision() => PropertyType == PropertyType.Apartment;
-    public bool ShouldSerializePlot() => PropertyType == PropertyType.House;
+    public bool ShouldSerializeApartment() => PropertyType == PropertyType.公寓;
+    public bool ShouldSerializeApartmentSubdivision() => PropertyType == PropertyType.公寓;
+    public bool ShouldSerializePlot() => PropertyType == PropertyType.房屋;
 
     public string GetAddressString()
     {
-        if(PropertyType == PropertyType.House)
+        if(PropertyType == PropertyType.房屋)
         {
             return $"{ExcelWorldHelper.GetName(World)}, {TabAddressBook.ResidentialNames.SafeSelect(City)}, W{Ward}, P{Plot}";
         }
-        if(PropertyType == PropertyType.Apartment)
+        if(PropertyType == PropertyType.公寓)
         {
             return $"{ExcelWorldHelper.GetName(World)}, {TabAddressBook.ResidentialNames.SafeSelect(City)}, W{Ward}{(ApartmentSubdivision ? " subdivision" : "")}, Apartment {Apartment}";
         }

@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 namespace Lifestream.Data;
 public enum CustomAliasKind
 {
-    Teleport_to_Aetheryte, Walk_to_point, Navmesh_to_point, Change_world
+    传送到以太之光, 步行到坐标, 寻路到坐标, 跨服
 }

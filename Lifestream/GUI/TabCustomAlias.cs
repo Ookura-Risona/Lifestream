@@ -16,7 +16,7 @@ public static class TabCustomAlias
 {
     public static void Draw()
     {
-        ImGuiEx.Text(EColor.RedBright, "Alpha feature, please report bugs.");
+        ImGuiEx.Text(EColor.RedBright, "Alpha 功能，请报告错误。");
         var selector = S.CustomAliasFileSystemManager.FileSystem.Selector;
         selector.Draw(150f);
         ImGui.SameLine();
@@ -29,7 +29,7 @@ public static class TabCustomAlias
             }
             else
             {
-                ImGuiEx.TextWrapped($"To begin, select an alias you want to edit or create a new one.");
+                ImGuiEx.TextWrapped($"首先，选择要编辑的别名或创建新别名。");
             }
         }
         ImGui.EndChild();
@@ -37,14 +37,14 @@ public static class TabCustomAlias
 
     private static void DrawAlias(CustomAlias selected)
     {
-        if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "Add new"))
+        if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "新增"))
         {
             selected.Commands.Add(new());
         }
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f);
-        ImGui.InputText($"Alias", ref selected.Alias, 50);
-        ImGuiEx.HelpMarker($"Will be available via \"/li {selected.Alias}\" command");
+        ImGui.InputText($"别名", ref selected.Alias, 50);
+        ImGuiEx.HelpMarker($"将通过 \"/li {selected.Alias}\" 命令可用");
         for(var i = 0; i < selected.Commands.Count; i++)
         {
             var x = selected.Commands[i];
@@ -60,7 +60,7 @@ public static class TabCustomAlias
             }
             ImGui.SameLine(0, 1);
             ImGui.PopID();
-            ImGuiEx.TreeNodeCollapsingHeader($"Command {i + 1}: {x.Kind}###{x.ID}", () => DrawCommand(x, selected), ImGuiTreeNodeFlags.CollapsingHeader);
+            ImGuiEx.TreeNodeCollapsingHeader($"命令 {i + 1}: {x.Kind}###{x.ID}", () => DrawCommand(x, selected));
         }
     }
 
@@ -71,36 +71,36 @@ public static class TabCustomAlias
         var names = Ref<Dictionary<uint, string>>.Get("Aetherytes", () => aetherytes.Select(Svc.Data.GetExcelSheet<Aetheryte>().GetRow).ToDictionary(x => x.RowId, x => x.PlaceName.Value.Name.ToString()));
         ImGui.Separator();
         ImGui.SetNextItemWidth(150f);
-        ImGuiEx.EnumCombo("Alias kind", ref command.Kind);
+        ImGuiEx.EnumCombo("别名种类", ref command.Kind);
         ImGui.SameLine();
-        if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Trash, "Delete"))
+        if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Trash, "删除"))
         {
             new TickScheduler(() => selected.Commands.Remove(command));
         }
 
-        if(command.Kind == CustomAliasKind.Teleport_to_Aetheryte)
+        if(command.Kind == CustomAliasKind.传送到以太之光)
         {
             ImGui.SetNextItemWidth(150f);
-            ImGuiEx.Combo("Select aetheryte to teleport to", ref command.Aetheryte, aetherytes, names: names);
+            ImGuiEx.Combo("选择要传送的以太之光", ref command.Aetheryte, aetherytes, names: names);
         }
 
-        if(command.Kind.EqualsAny(CustomAliasKind.Walk_to_point, CustomAliasKind.Navmesh_to_point))
+        if(command.Kind.EqualsAny(CustomAliasKind.步行到坐标, CustomAliasKind.寻路到坐标))
         {
             ImGui.SetNextItemWidth(200f);
-            ImGui.InputFloat3("Point", ref command.Point);
+            ImGui.InputFloat3("坐标", ref command.Point);
             ImGui.SameLine();
-            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.User, "My position", Player.Available))
+            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.User, "我的位置", Player.Available))
             {
                 command.Point = Player.Position;
             }
         }
 
-        if(command.Kind == CustomAliasKind.Change_world)
+        if(command.Kind == CustomAliasKind.跨服)
         {
             ImGui.SetNextItemWidth(150f);
             Ref<WorldSelector>.Get("Selector", () => new()).Draw(ref command.World);
             ImGui.SameLine();
-            ImGuiEx.Text("Select world");
+            ImGuiEx.Text("选择服务器");
         }
         ImGui.PopID();
     }

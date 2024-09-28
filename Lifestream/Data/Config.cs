@@ -16,8 +16,8 @@ public class Config : IEzConfig
     public bool UseMapTeleport = true;
     public bool HideAddon = true;
     public HashSet<string> HideAddonList = [.. Utils.DefaultAddons];
-    public BasePositionHorizontal PosHorizontal = BasePositionHorizontal.Middle;
-    public BasePositionVertical PosVertical = BasePositionVertical.Middle;
+    public BasePositionHorizontal PosHorizontal = BasePositionHorizontal.中间;
+    public BasePositionVertical PosVertical = BasePositionVertical.中间;
     public bool ShowAethernet = true;
     public bool ShowWorldVisit = true;
     public HashSet<uint> Favorites = [];
@@ -58,10 +58,10 @@ public class Config : IEzConfig
     public bool DisplayPopupNotifications = true;
     public List<HousePathData> HousePathDatas = [];
     public bool EnterMyApartment = true;
-    public HouseEnterMode HouseEnterMode = HouseEnterMode.None;
+    public HouseEnterMode HouseEnterMode = HouseEnterMode.无;
     public bool UseReturn = true;
     public uint PreferredInn = 0;
-    public List<AutoPropertyData> PropertyPrio = [new(true, TaskPropertyShortcut.PropertyType.Home), new(true, TaskPropertyShortcut.PropertyType.FC), new(true, TaskPropertyShortcut.PropertyType.Apartment), new(true, TaskPropertyShortcut.PropertyType.Inn)];
+    public List<AutoPropertyData> PropertyPrio = [new(true, TaskPropertyShortcut.PropertyType.个人房屋), new(true, TaskPropertyShortcut.PropertyType.部队房屋), new(true, TaskPropertyShortcut.PropertyType.公寓), new(true, TaskPropertyShortcut.PropertyType.旅馆)];
     public bool EnableDvcRetry = false;
     public int MaxDcvRetries = 300;
     public bool DcvUseAlternativeWorld = true;

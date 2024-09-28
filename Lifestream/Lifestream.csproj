@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>NightmareXIV</Authors>
-        <Version>2.3.0.0</Version>
+        <Version>2.3.0.1</Version>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -34,8 +34,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\ECommons\ECommons\ECommons.csproj" />
       <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
-      <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
       <ProjectReference Include="..\NightmareUI.OtterGuiWrapper\NightmareUI.OtterGuiWrapper\NightmareUI.OtterGuiWrapper.csproj" />
       <ProjectReference Include="..\NightmareUI\NightmareUI\NightmareUI.csproj" />
       <ProjectReference Include="..\OtterGui\OtterGui.csproj" />

@@ -1,5 +1,4 @@
 ﻿using ECommons.Funding;
-using ECommons.Reflection;
 
 namespace Lifestream.GUI;
 
@@ -9,11 +8,11 @@ internal static unsafe class MainGui
     {
         PatreonBanner.DrawRight();
         ImGuiEx.EzTabBar("LifestreamTabs", PatreonBanner.Text,
-            ("Address Book", TabAddressBook.Draw, null, true),
-            ("House Registration", UIHouseReg.Draw, null, true),
-            ("Custom Alias", TabCustomAlias.Draw, null, true),
-            ("Settings", UISettings.Draw, null, true),
-            ("Service accounts", UIServiceAccount.Draw, null, true),
+            ("地址簿", TabAddressBook.Draw, null, true),
+            ("房屋登记", UIHouseReg.Draw, null, true),
+            ("自定义别名", TabCustomAlias.Draw, null, true),
+            ("设置", UISettings.Draw, null, true),
+            ("服务账户", UIServiceAccount.Draw, null, true),
             ("Debug", UIDebug.Draw, ImGuiColors.DalamudGrey3, true)
             );
     }

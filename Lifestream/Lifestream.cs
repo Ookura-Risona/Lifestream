@@ -1,4 +1,5 @@
 ﻿using AutoRetainerAPI;
+using Dalamud.Interface.ImGuiNotification;
 using ECommons.Automation.NeoTaskManager;
 using ECommons.Automation.NeoTaskManager.Tasks;
 using ECommons.ChatMethods;
@@ -70,6 +71,17 @@ public unsafe class Lifestream : IDalamudPlugin
     {
         P = this;
         ECommonsMain.Init(pluginInterface, this, Module.SplatoonAPI);
+        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        {
+            Svc.NotificationManager.AddNotification(new Notification()
+            {
+                Type = NotificationType.Error,
+                Title = "加载验证",
+                Content = "由于本地加载或安装来源仓库非NiGuangOwO个人仓库，插件加载失败",
+            });
+            return;
+        }
+
         new TickScheduler(delegate
         {
             Config = EzConfig.Init<Config>();
@@ -81,28 +93,28 @@ public unsafe class Lifestream : IDalamudPlugin
             EzConfigGui.WindowSystem.AddWindow(new ProgressOverlay());
             CharaSelectOverlay = new();
             EzConfigGui.WindowSystem.AddWindow(CharaSelectOverlay);
-            EzCmd.Add("/lifestream", ProcessCommand, "Open plugin configuration");
+            EzCmd.Add("/lifestream", ProcessCommand, "打开插件配置");
             EzCmd.Add("/li", ProcessCommand, """
-                return to your home world
-                /li <worldname> - go to specified world
-                /li <dataCenterName> - go to random world in specified Data Center
-                /li <aethernetName> - go to specified aethernet destination if you are next to any supported aetheryte
+                回到你的原始服务器
+                /li <服务器名> - 前往指定的服务器
+                /li <大区名> - 前往指定大区的随机服务器
+                /li <以太水晶名称> - 如果您位于任何受支持的以太网络旁边，则前往指定的以太网络目的地
 
-                /li <address> - go to specified plot in current world, where address - plot adddress formatted in "residential district, ward, plot" format (without quotes)
-                /li <worldname> <address> - go to specified plot in specified world
+                /li <地址> - 前往当前服务器中的指定地块，其中地址 - 地块地址格式为“住宅区,房区,房号”格式（不带引号）
+                /li <服务器> <地址> - 前往指定服务器的指定地址
 
-                /li gc|hc - go to your grand company
-                /li gc|hc <company name> - go to specified grand company
-                /li gcc|hcc - go to your grand company's fc chest
-                /li gcc|hcc <company name> - go to specified grand company's fc chest
-                ...where "gc" or "gcc" will move you to grand company in current world while "hc" or "hcc" will return you to home world first
+                /li gc|hc - 前往你的大国防联军
+                /li gc|hc <大国防联军名字> - 前往指定大国防联军
+                /li gcc|hcc - 前往你大国防联军的部队箱
+                /li gcc|hcc <company name> - 前往指定大国防联军的部队箱
+                ...其中“gc”或“gcc”将把你带到当前服务器的大国防联军，而“hc”或“hcc”将首先让你返回原始服务器
 
-                /li auto - go to your private estate, free company estate or apartment, whatever is found in this order
-                /li home|house|private - go to your private estate
-                /li fc|free|company|free company - go to your free company estate
-                /li apartment|apt - go to your apartment
+                /li auto - 前往您的个人房屋、部队房屋或公寓，无论在此顺序中找到什么
+                /li home|house|private - 前往你的个人房屋
+                /li fc|free|company|free company - 前往你的部队房屋
+                /li apartment|apt - 前往你的公寓
 
-                /li w|world|open|select - open world travel window
+                /li w|world|open|select - 打开跨服窗口
                 """);
             DataStore = new();
             ProperOnLogin.RegisterAvailable(() => DataStore.BuildWorlds());
@@ -162,19 +174,19 @@ public unsafe class Lifestream : IDalamudPlugin
         }
         else if(arguments == "auto")
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Auto);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.自动);
         }
         else if(arguments.EqualsIgnoreCaseAny("home", "house", "private"))
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Home);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.个人房屋);
         }
         else if(arguments.EqualsIgnoreCaseAny("fc", "free", "company", "company", "free company"))
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.FC);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋);
         }
         else if(arguments.EqualsIgnoreCaseAny("apartment", "apt"))
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Apartment);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.公寓);
         }
         else if(arguments.EqualsIgnoreCaseAny("inn") || arguments.StartsWithAny(StringComparison.OrdinalIgnoreCase, "inn "))
         {
@@ -187,7 +199,7 @@ public unsafe class Lifestream : IDalamudPlugin
             }
             else
             {
-                TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Inn, default, innNum);
+                TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innNum);
             }
         }
         else if(arguments.EqualsAny("gc", "gcc", "hc", "hcc", "fcgc", "gcfc") || arguments.StartsWithAny("gc ", "gcc ", "hc ", "hcc ", "fcgc ", "gcfc "))
@@ -422,6 +434,13 @@ public unsafe class Lifestream : IDalamudPlugin
 
     public void Dispose()
     {
+        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        {
+            ECommonsMain.Dispose();
+            P = null;
+            return;
+        }
+
         Svc.Framework.Update -= Framework_Update;
         Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
         Memory.Dispose();

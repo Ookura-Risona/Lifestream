@@ -259,7 +259,7 @@ internal static unsafe class Utils
             {
                 City = city.Value,
                 World = (int)world.RowId,
-                PropertyType = isApartment ? PropertyType.Apartment : PropertyType.House,
+                PropertyType = isApartment ? PropertyType.公寓 : PropertyType.房屋,
                 Ward = ward,
                 Apartment = plot,
                 Plot = plot,
@@ -306,11 +306,11 @@ internal static unsafe class Utils
         if(h == null) return false;
         if(h->GetCurrentWard() != entry.Ward - 1) return false;
         if(Utils.GetResidentialAetheryteByTerritoryType(Svc.ClientState.TerritoryType) != entry.City) return false;
-        if(entry.PropertyType == PropertyType.House)
+        if(entry.PropertyType == PropertyType.房屋)
         {
             return h->GetCurrentPlot() == entry.Plot - 1;
         }
-        if(entry.PropertyType == PropertyType.Apartment)
+        if(entry.PropertyType == PropertyType.公寓)
         {
             if(entry.ApartmentSubdivision && h->GetCurrentDivision() != 2) return false;
             return entry.Apartment == h->GetCurrentRoom();
@@ -339,22 +339,22 @@ internal static unsafe class Utils
         }
         if(entry.IsQuickTravelAvailable())
         {
-            if(entry.PropertyType == PropertyType.House)
+            if(entry.PropertyType == PropertyType.房屋)
             {
                 TaskTpAndGoToWard.EnqueueFromResidentialAetheryte(entry.City, entry.Plot - 1, false, default, false);
             }
-            else if(entry.PropertyType == PropertyType.Apartment)
+            else if(entry.PropertyType == PropertyType.公寓)
             {
                 TaskTpAndGoToWard.EnqueueFromResidentialAetheryte(entry.City, entry.Apartment - 1, true, entry.ApartmentSubdivision, false);
             }
         }
         else
         {
-            if(entry.PropertyType == PropertyType.House)
+            if(entry.PropertyType == PropertyType.房屋)
             {
                 TaskTpAndGoToWard.Enqueue(ExcelWorldHelper.GetName(entry.World), entry.City, entry.Ward, entry.Plot - 1, false, default);
             }
-            else if(entry.PropertyType == PropertyType.Apartment)
+            else if(entry.PropertyType == PropertyType.公寓)
             {
                 TaskTpAndGoToWard.Enqueue(ExcelWorldHelper.GetName(entry.World), entry.City, entry.Ward, entry.Apartment - 1, true, entry.ApartmentSubdivision);
             }
@@ -412,20 +412,21 @@ internal static unsafe class Utils
         builder.Append(ExcelWorldHelper.GetName(entry.World));
         builder.Append(", ");
         builder.Append(TabAddressBook.ResidentialNames.SafeSelect(entry.City) ?? "???");
-        builder.Append(", Ward ");
         builder.Append(entry.Ward);
-        if(entry.PropertyType == PropertyType.House)
+        builder.Append("区, ");
+        if (entry.PropertyType == PropertyType.房屋)
         {
-            builder.Append(", Plot ");
             builder.Append(entry.Plot);
+            builder.Append("号");
         }
-        if(entry.PropertyType == PropertyType.Apartment)
+        if (entry.PropertyType == PropertyType.公寓)
         {
-            builder.Append(", Apartment ");
+            builder.Append("公寓 ");
             builder.Append(entry.Apartment);
-            if(entry.ApartmentSubdivision)
+            builder.Append("号");
+            if (entry.ApartmentSubdivision)
             {
-                builder.Append(" (subdivision)");
+                builder.Append("(扩建区)");
             }
         }
         return builder.ToString();
@@ -518,7 +519,7 @@ internal static unsafe class Utils
 
     internal static string GetInnNameFromTerritory(uint tt)
     {
-        if(tt == 0) return "Autodetect";
+        if(tt == 0) return "自动检测";
         var t = Svc.Data.GetExcelSheet<TerritoryType>().GetRow(tt);
         if(t != null)
         {

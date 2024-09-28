@@ -33,7 +33,7 @@ public unsafe static class TaskPropertyShortcut
 
     public static uint[] InnNpc = [1000102, 1000974, 1001976, 1011193, 1018981, 1048375, 1037293, 1027231];
 
-    public static void Enqueue(PropertyType propertyType = PropertyType.Auto, HouseEnterMode? mode = null, int? innIndex = null, bool? enterApartment = null, bool useSameWorld = false)
+    public static void Enqueue(PropertyType propertyType = PropertyType.自动, HouseEnterMode? mode = null, int? innIndex = null, bool? enterApartment = null, bool useSameWorld = false)
     {
         if(P.TaskManager.IsBusy)
         {
@@ -51,7 +51,7 @@ public unsafe static class TaskPropertyShortcut
         }
         P.TaskManager.Enqueue(() =>
         {
-            if(propertyType == PropertyType.Auto)
+            if(propertyType == PropertyType.自动)
             {
                 foreach(var x in P.Config.PropertyPrio)
                 {
@@ -61,7 +61,7 @@ public unsafe static class TaskPropertyShortcut
                     }
                 }
             }
-            else if(propertyType == PropertyType.Home)
+            else if(propertyType == PropertyType.个人房屋)
             {
                 if(GetPrivateHouseAetheryteID() != 0)
                 {
@@ -72,7 +72,7 @@ public unsafe static class TaskPropertyShortcut
                     DuoLog.Error("Could not find private house");
                 }
             }
-            else if(propertyType == PropertyType.FC)
+            else if(propertyType == PropertyType.部队房屋)
             {
                 if(GetFreeCompanyAetheryteID() != 0)
                 {
@@ -83,7 +83,7 @@ public unsafe static class TaskPropertyShortcut
                     DuoLog.Error("Could not find free company house");
                 }
             }
-            else if(propertyType == PropertyType.Apartment)
+            else if(propertyType == PropertyType.公寓)
             {
                 if(GetApartmentAetheryteID().ID != 0)
                 {
@@ -94,7 +94,7 @@ public unsafe static class TaskPropertyShortcut
                     DuoLog.Error("Could not find apartment");
                 }
             }
-            else if(propertyType == PropertyType.Inn)
+            else if(propertyType == PropertyType.旅馆)
             {
                 EnqueueGoToInn(innIndex);
             }
@@ -103,22 +103,22 @@ public unsafe static class TaskPropertyShortcut
 
     static bool ExecuteByPropertyType(PropertyType type, HouseEnterMode? mode, int? innIndex, bool? enterApartment)
     {
-        if(type == PropertyType.Home && GetPrivateHouseAetheryteID() != 0)
+        if(type == PropertyType.个人房屋 && GetPrivateHouseAetheryteID() != 0)
         {
             ExecuteTpAndPathfind(GetPrivateHouseAetheryteID(), Utils.GetPrivatePathData(), mode);
             return true;
         }
-        else if(type == PropertyType.FC && GetFreeCompanyAetheryteID() != 0)
+        else if(type == PropertyType.部队房屋 && GetFreeCompanyAetheryteID() != 0)
         {
             ExecuteTpAndPathfind(GetFreeCompanyAetheryteID(), Utils.GetFCPathData(), mode);
             return true;
         }
-        else if(type == PropertyType.Apartment && GetApartmentAetheryteID().ID != 0)
+        else if(type == PropertyType.公寓 && GetApartmentAetheryteID().ID != 0)
         {
             EnqueueGoToMyApartment(enterApartment);
             return true;
         }
-        else if(type == PropertyType.Inn)
+        else if(type == PropertyType.旅馆)
         {
             EnqueueGoToInn(innIndex);
             return true;
@@ -128,13 +128,13 @@ public unsafe static class TaskPropertyShortcut
 
     private static void ExecuteTpAndPathfind(uint id, HousePathData data, HouseEnterMode? mode = null)
     {
-        mode ??= data?.GetHouseEnterMode() ?? HouseEnterMode.None;
+        mode ??= data?.GetHouseEnterMode() ?? HouseEnterMode.无;
         PluginLog.Information($"id={id}, data={data}, mode={mode}, cnt={data?.PathToEntrance.Count}");
         P.TaskManager.BeginStack();
         P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(id));
         P.TaskManager.Enqueue(() => !IsScreenReady());
         P.TaskManager.Enqueue(() => IsScreenReady()  && Player.Interactable);
-        if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.Walk_to_door, HouseEnterMode.Enter_house))
+        if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.走到门口, HouseEnterMode.进入房屋))
         {
             P.TaskManager.Enqueue(() =>
             {
@@ -146,7 +146,7 @@ public unsafe static class TaskPropertyShortcut
             });
             P.TaskManager.Enqueue(() => P.FollowPath.Move(data.PathToEntrance, true));
             P.TaskManager.Enqueue(() => P.FollowPath.Waypoints.Count == 0);
-            if(mode == HouseEnterMode.Enter_house)
+            if(mode == HouseEnterMode.进入房屋)
             {
                 P.TaskManager.Enqueue(() =>
                 {
@@ -341,6 +341,6 @@ public unsafe static class TaskPropertyShortcut
 
     public enum PropertyType
     {
-        Auto, Home, FC, Apartment, Inn
+        自动, 个人房屋, 部队房屋, 公寓, 旅馆
     }
 }

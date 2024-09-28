@@ -20,7 +20,7 @@ public class CustomAliasCommand
 
     public void Enqueue()
     {
-        if(this.Kind == CustomAliasKind.Change_world)
+        if(this.Kind == CustomAliasKind.跨服)
         {
             if(Player.Object.HomeWorld.Id != Player.Object.CurrentWorld.Id)
             {
@@ -35,12 +35,12 @@ public class CustomAliasCommand
                 }
             }
         }
-        else if(this.Kind == CustomAliasKind.Walk_to_point)
+        else if(this.Kind == CustomAliasKind.步行到坐标)
         {
             P.TaskManager.Enqueue(() => P.FollowPath.Move([this.Point], true));
             P.TaskManager.Enqueue(() => P.FollowPath.Waypoints.Count > 0);
         }
-        else if(this.Kind == CustomAliasKind.Navmesh_to_point)
+        else if(this.Kind == CustomAliasKind.寻路到坐标)
         {
             P.TaskManager.Enqueue(() =>
             {
@@ -52,7 +52,7 @@ public class CustomAliasCommand
                     );
             });
         }
-        else if(this.Kind == CustomAliasKind.Teleport_to_Aetheryte)
+        else if(this.Kind == CustomAliasKind.传送到以太之光)
         {
             P.TaskManager.Enqueue((Action)(() => S.TeleportService.TeleportToAetheryte(this.Aetheryte)));
             P.TaskManager.Enqueue(() => !IsScreenReady());

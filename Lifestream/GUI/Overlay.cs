@@ -12,7 +12,7 @@ namespace Lifestream.GUI;
 
 internal class Overlay : Window
 {
-    public Overlay() : base("Lifestream Overlay", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoFocusOnAppearing, true)
+    public Overlay() : base("Lifestream悬浮窗", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoFocusOnAppearing, true)
     {
         IsOpen = true;
         new EzTerritoryChanged((x) => IsOpen = true);
@@ -38,11 +38,11 @@ internal class Overlay : Window
 
     private float GetBasePosX()
     {
-        if(P.Config.PosHorizontal == BasePositionHorizontal.Middle)
+        if(P.Config.PosHorizontal == BasePositionHorizontal.中间)
         {
             return ImGuiHelpers.MainViewport.Size.X / 2 - WSize.X / 2;
         }
-        else if(P.Config.PosHorizontal == BasePositionHorizontal.Right)
+        else if(P.Config.PosHorizontal == BasePositionHorizontal.右边)
         {
             return ImGuiHelpers.MainViewport.Size.X - WSize.X;
         }
@@ -54,11 +54,11 @@ internal class Overlay : Window
 
     private float GetBasePosY()
     {
-        if(P.Config.PosVertical == BasePositionVertical.Middle)
+        if(P.Config.PosVertical == BasePositionVertical.中间)
         {
             return ImGuiHelpers.MainViewport.Size.Y / 2 - WSize.Y / 2;
         }
-        else if(P.Config.PosVertical == BasePositionVertical.Bottom)
+        else if(P.Config.PosVertical == BasePositionVertical.底部)
         {
             return ImGuiHelpers.MainViewport.Size.Y - WSize.Y;
         }
@@ -168,7 +168,7 @@ internal class Overlay : Window
 
         if(P.ActiveAetheryte.Value.ID == 70 && P.Config.Firmament)
         {
-            var name = "Firmament";
+            var name = "天穹街";
             ResizeButton(name);
             if(ImGui.Button(name, ButtonSizeAetheryte))
             {
@@ -224,11 +224,11 @@ internal class Overlay : Window
         else
         {
             ImGuiEx.Text($"""
-                Instances available, 
-                but not initialized.
+                副本区可用， 
+                但未初始化。
 
-                To initialize instances, 
-                access aetheryte once.
+                要初始化副本区， 
+                交互以太之光一次。
                 """);
         }
     }
@@ -241,14 +241,14 @@ internal class Overlay : Window
         }
         if(ImGui.BeginPopup($"LifestreamPopup{x.ID}"))
         {
-            if(ImGuiEx.CollectionCheckbox("Favorite", x.ID, P.Config.Favorites))
+            if(ImGuiEx.CollectionCheckbox("喜爱", x.ID, P.Config.Favorites))
             {
                 PluginLog.Debug($"Rebuilding data store");
                 P.DataStore = new();
             }
-            ImGuiEx.CollectionCheckbox("Hidden", x.ID, P.Config.Hidden);
+            ImGuiEx.CollectionCheckbox("隐藏", x.ID, P.Config.Hidden);
             var newName = P.Config.Renames.TryGetValue(x.ID, out var value) ? value : "";
-            ImGuiEx.Text($"Rename:");
+            ImGuiEx.Text($"重命名:");
             ImGui.SetNextItemWidth(200);
             if(ImGui.InputText($"##LifestreamRename", ref newName, 100))
             {

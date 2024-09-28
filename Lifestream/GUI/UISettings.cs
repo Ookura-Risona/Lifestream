@@ -15,7 +15,7 @@ internal static unsafe class UISettings
     private static string AddNew = "";
     internal static void Draw()
     {
-        NuiTools.ButtonTabs([[new("General", () => Wrapper(DrawGeneral)), new("Overlay", () => Wrapper(DrawOverlay)), new("Expert", () => Wrapper(DrawExpert))]]);
+        NuiTools.ButtonTabs([[new("常规", () => Wrapper(DrawGeneral)), new("悬浮窗", () => Wrapper(DrawOverlay)), new("专业", () => Wrapper(DrawExpert))]]);
     }
 
     private static void Wrapper(Action action)
@@ -27,42 +27,42 @@ internal static unsafe class UISettings
     private static void DrawGeneral()
     {
         new NuiBuilder()
-        .Section("Teleport Configuration")
+        .Section("传送配置")
         .Widget(() =>
         {
             ImGui.SetNextItemWidth(200f);
-            ImGuiEx.EnumCombo($"Teleport world change gateway", ref P.Config.WorldChangeAetheryte, Lang.WorldChangeAetherytes);
-            ImGuiEx.HelpMarker($"Where would you like to teleport for world changes");
-            ImGui.Checkbox($"Teleport to specific aethernet destination after world/dc visit", ref P.Config.WorldVisitTPToAethernet);
+            ImGuiEx.EnumCombo($"跨服传送水晶", ref P.Config.WorldChangeAetheryte, Lang.WorldChangeAetherytes);
+            ImGuiEx.HelpMarker($"你想传送到哪里来跨服");
+            ImGui.Checkbox($"访问 服务器/大区 后传送到特定的以太网目的地", ref P.Config.WorldVisitTPToAethernet);
             if(P.Config.WorldVisitTPToAethernet)
             {
                 ImGui.Indent();
                 ImGui.SetNextItemWidth(250f);
-                ImGui.InputText("Aethernet destination, as if you'd use in \"/li\" command", ref P.Config.WorldVisitTPTarget, 50);
-                ImGui.Checkbox($"Only teleport from command but not from overlay", ref P.Config.WorldVisitTPOnlyCmd);
+                ImGui.InputText("以太网目的地，就像您在“/li”命令中使用的一样", ref P.Config.WorldVisitTPTarget, 50);
+                ImGui.Checkbox($"只作用于使用命令传送的情况，不作用于从悬浮窗传送的情况", ref P.Config.WorldVisitTPOnlyCmd);
                 ImGui.Unindent();
             }
-            ImGui.Checkbox($"Add firmament location into Foundation aetheryte", ref P.Config.Firmament);
-            ImGui.Checkbox($"Automatically leave non cross-world party upon changing world", ref P.Config.LeavePartyBeforeWorldChange);
-            ImGui.Checkbox($"Show teleport destination in chat", ref P.Config.DisplayChatTeleport);
-            ImGui.Checkbox($"Show teleport destination in popup notifications", ref P.Config.DisplayPopupNotifications);
-            ImGui.Checkbox("Retry same-world failed world visits", ref P.Config.RetryWorldVisit);
+            ImGui.Checkbox($"将天穹街添加到伊修加德基础层以太之光中", ref P.Config.Firmament);
+            ImGui.Checkbox($"跨服时自动离开非跨服队伍", ref P.Config.LeavePartyBeforeWorldChange);
+            ImGui.Checkbox($"在聊天中显示传送目的地", ref P.Config.DisplayChatTeleport);
+            ImGui.Checkbox($"在弹出通知中显示传送目的地", ref P.Config.DisplayPopupNotifications);
+            ImGui.Checkbox("重试同服务器失败的服务器访问", ref P.Config.RetryWorldVisit);
             ImGui.Indent();
             ImGui.SetNextItemWidth(150f);
-            ImGui.InputInt("Interval between retries, seconds##2", ref P.Config.RetryWorldVisitInterval.ValidateRange(1, 120));
+            ImGui.InputInt("重试间隔，秒##2", ref P.Config.RetryWorldVisitInterval.ValidateRange(1, 120));
             ImGui.Unindent();
             //ImGui.Checkbox("Use Return instead of Teleport when possible", ref P.Config.UseReturn);
             //ImGuiEx.HelpMarker("This includes any IPC calls");
         })
 
-        .Section("Shortcuts")
+        .Section("捷径")
         .Widget(() =>
         {
-            ImGui.Checkbox("When teleporting to your own apartment, enter inside", ref P.Config.EnterMyApartment);
+            ImGui.Checkbox("当传送到你自己的公寓时，进入里面", ref P.Config.EnterMyApartment);
             ImGui.SetNextItemWidth(150f);
-            ImGuiEx.EnumCombo("When teleporting to your/fc house, perform this action", ref P.Config.HouseEnterMode);
+            ImGuiEx.EnumCombo("当传送到自己/部队房屋时，执行此操作", ref P.Config.HouseEnterMode);
             ImGui.SetNextItemWidth(150f);
-            if(ImGui.BeginCombo("Preferred Inn", Utils.GetInnNameFromTerritory(P.Config.PreferredInn), ImGuiComboFlags.HeightLarge))
+            if(ImGui.BeginCombo("首选旅馆", Utils.GetInnNameFromTerritory(P.Config.PreferredInn), ImGuiComboFlags.HeightLarge))
             {
                 foreach(var x in (uint[])[0, .. TaskPropertyShortcut.InnData.Keys])
                 {
@@ -71,7 +71,7 @@ internal static unsafe class UISettings
                 ImGui.EndCombo();
             }
             ImGui.Separator();
-            ImGuiEx.Text("\"/li auto\" command priority:");
+            ImGuiEx.Text("\"/li auto\"命令优先级:");
             for(int i = 0; i < P.Config.PropertyPrio.Count; i++)
             {
                 var d = P.Config.PropertyPrio[i];
@@ -106,41 +106,41 @@ internal static unsafe class UISettings
             ImGui.Separator();
         })
 
-        .Section("Map Integration")
+        .Section("地图整合")
         .Widget(() =>
         {
-            ImGui.Checkbox("Click Aethernet Shard on map for quick teleport", ref P.Config.UseMapTeleport);
+            ImGui.Checkbox("单击地图上的城内以太水晶可快速传送", ref P.Config.UseMapTeleport);
         })
 
-        .Section("Cross-Datacenter")
+        .Section("跨大区")
         .Widget(() =>
         {
-            ImGui.Checkbox($"Allow travelling to another data center", ref P.Config.AllowDcTransfer);
-            ImGui.Checkbox($"Leave party before switching data center", ref P.Config.LeavePartyBeforeLogout);
-            ImGui.Checkbox($"Teleport to gateway aetheryte before switching data center if not in sanctuary", ref P.Config.TeleportToGatewayBeforeLogout);
-            ImGui.Checkbox($"Teleport to gateway aetheryte after completing data center travel", ref P.Config.DCReturnToGateway);
-            ImGui.Checkbox($"Allow alternative world during DC transfer", ref P.Config.DcvUseAlternativeWorld);
-            ImGuiEx.HelpMarker("If destination world isn't available but some other world on targeted data center is, it will be selected instead. Normal world visit will be enqueued after logging in.");
-            ImGui.Checkbox($"Retry data center transfer if destination world is not available", ref P.Config.EnableDvcRetry);
+            ImGui.Checkbox($"允许前往另一个大区", ref P.Config.AllowDcTransfer);
+            ImGui.Checkbox($"切换大区前离开队伍", ref P.Config.LeavePartyBeforeLogout);
+            ImGui.Checkbox($"如果不在休息区，则在跨大区之前传送到以太之光", ref P.Config.TeleportToGatewayBeforeLogout);
+            ImGui.Checkbox($"完成跨大区后传送到以太之光", ref P.Config.DCReturnToGateway);
+            ImGui.Checkbox($"跨大区期间允许选择服务器", ref P.Config.DcvUseAlternativeWorld);
+            ImGuiEx.HelpMarker("如果目标服务器不可用，但目标大区上的其他服务器可用，则会选择该服务器。正常登录后会切换服务器。");
+            ImGui.Checkbox($"如果目标服务器不可用，重试跨大区", ref P.Config.EnableDvcRetry);
             ImGui.Indent();
             ImGui.SetNextItemWidth(150f);
-            ImGui.InputInt("Max retries", ref P.Config.MaxDcvRetries.ValidateRange(1, int.MaxValue));
+            ImGui.InputInt("最大重试次数", ref P.Config.MaxDcvRetries.ValidateRange(1, int.MaxValue));
             ImGui.SetNextItemWidth(150f);
-            ImGui.InputInt("Interval between retries, seconds", ref P.Config.DcvRetryInterval.ValidateRange(10, 1000));
+            ImGui.InputInt("重试间隔，秒", ref P.Config.DcvRetryInterval.ValidateRange(10, 1000));
             ImGui.Unindent();
         })
 
-        .Section("Address Book")
+        .Section("地址簿")
         .Widget(() =>
         {
-            ImGui.Checkbox($"Disable pathing to a plot", ref P.Config.AddressNoPathing);
-            ImGuiEx.HelpMarker($"You will be left at a closest aetheryte to the ward");
-            ImGui.Checkbox($"Disable entering an apartment", ref P.Config.AddressApartmentNoEntry);
-            ImGuiEx.HelpMarker($"You will be left at an entry confirmation dialogue");
+            ImGui.Checkbox($"禁用寻路到地块", ref P.Config.AddressNoPathing);
+            ImGuiEx.HelpMarker($"您将被留在距离地块最近的以太水晶");
+            ImGui.Checkbox($"禁止进入公寓", ref P.Config.AddressApartmentNoEntry);
+            ImGuiEx.HelpMarker($"您将看到进入确认对话框");
         })
 
-        .Section("Movement")
-        .Checkbox("Use Sprint and Peloton when auto-moving", () => ref P.Config.UseSprintPeloton)
+        .Section("移动")
+        .Checkbox("自动移动时使用 冲刺 和 速行", () => ref P.Config.UseSprintPeloton)
 
         .Draw();
     }
@@ -148,38 +148,38 @@ internal static unsafe class UISettings
     private static void DrawOverlay()
     {
         new NuiBuilder()
-        .Section("General Overlay Settings")
+        .Section("常规悬浮窗设置")
         .Widget(() =>
         {
-            ImGui.Checkbox("Enable Overlay", ref P.Config.Enable);
+            ImGui.Checkbox("启用悬浮窗", ref P.Config.Enable);
             if(P.Config.Enable)
             {
                 ImGui.Indent();
-                ImGui.Checkbox($"Display Aethernet menu", ref P.Config.ShowAethernet);
-                ImGui.Checkbox($"Display World Visit menu", ref P.Config.ShowWorldVisit);
-                ImGui.Checkbox($"Display Housing Ward buttons", ref P.Config.ShowWards);
+                ImGui.Checkbox($"显示城内以太水晶菜单", ref P.Config.ShowAethernet);
+                ImGui.Checkbox($"显示服务器菜单", ref P.Config.ShowWorldVisit);
+                ImGui.Checkbox($"显示房区按钮", ref P.Config.ShowWards);
 
                 UtilsUI.NextSection();
 
-                ImGui.Checkbox("Fixed Lifestream Overlay position", ref P.Config.FixedPosition);
+                ImGui.Checkbox("固定Lifestream悬浮窗位置", ref P.Config.FixedPosition);
                 if(P.Config.FixedPosition)
                 {
                     ImGui.Indent();
                     ImGui.SetNextItemWidth(200f);
-                    ImGuiEx.EnumCombo("Horizontal base position", ref P.Config.PosHorizontal);
+                    ImGuiEx.EnumCombo("水平位置", ref P.Config.PosHorizontal);
                     ImGui.SetNextItemWidth(200f);
-                    ImGuiEx.EnumCombo("Vertical base position", ref P.Config.PosVertical);
+                    ImGuiEx.EnumCombo("垂直位置", ref P.Config.PosVertical);
                     ImGui.SetNextItemWidth(200f);
-                    ImGui.DragFloat2("Offset", ref P.Config.Offset);
+                    ImGui.DragFloat2("偏移", ref P.Config.Offset);
 
                     UtilsUI.NextSection();
 
                     ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("Button left/right padding", ref P.Config.ButtonWidth);
+                    ImGui.InputInt("按钮左/右内边距", ref P.Config.ButtonWidth);
                     ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("Aetheryte button top/bottom padding", ref P.Config.ButtonHeightAetheryte);
+                    ImGui.InputInt("以太水晶按钮顶部/底部填充", ref P.Config.ButtonHeightAetheryte);
                     ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("World button top/bottom padding", ref P.Config.ButtonHeightWorld);
+                    ImGui.InputInt("服务器按钮顶部/底部填充", ref P.Config.ButtonHeightWorld);
 
                     ImGui.Unindent();
                 }
@@ -187,12 +187,12 @@ internal static unsafe class UISettings
             }
         })
 
-        .Section("Instance changer")
-        .Checkbox("Enabled", () => ref P.Config.ShowInstanceSwitcher)
-        .Checkbox("Retry on failure", () => ref P.Config.InstanceSwitcherRepeat)
-        .Checkbox("Return to the ground when flying before changing instance", () => ref P.Config.EnableFlydownInstance)
-        .SliderInt(150f, "Extra button height", () => ref P.Config.InstanceButtonHeight, 0, 50)
-        .Widget("Reset Instance Data", (x) =>
+        .Section("副本区切换")
+        .Checkbox("启用", () => ref P.Config.ShowInstanceSwitcher)
+        .Checkbox("失败时重试", () => ref P.Config.InstanceSwitcherRepeat)
+        .Checkbox("切换副本区前飞行时返回地面", () => ref P.Config.EnableFlydownInstance)
+        .SliderInt(150f, "额外按钮高度", () => ref P.Config.InstanceButtonHeight, 0, 50)
+        .Widget("重置副本区数据", (x) =>
         {
             if(ImGuiEx.Button(x, P.Config.PublicInstances.Count > 0))
             {
@@ -201,8 +201,8 @@ internal static unsafe class UISettings
             }
         })
 
-        .Section("Game Window Integration")
-        .Checkbox($"Hide Lifestream if the following game windows are open", () => ref P.Config.HideAddon)
+        .Section("游戏窗口集成")
+        .Checkbox($"如果打开以下游戏窗口，则隐藏 Lifestream", () => ref P.Config.HideAddon)
         .If(() => P.Config.HideAddon)
         .Widget(() =>
         {
@@ -214,7 +214,7 @@ internal static unsafe class UISettings
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGuiEx.SetNextItemFullWidth();
-                ImGui.InputTextWithHint("##addnew", "Window name... /xldata ai - to find it", ref AddNew, 100);
+                ImGui.InputTextWithHint("##addnew", "窗口名称... /xldata ai - 来查找", ref AddNew, 100);
                 ImGui.TableNextColumn();
                 if(ImGuiEx.IconButton(FontAwesomeIcon.Plus))
                 {
@@ -281,7 +281,7 @@ internal static unsafe class UISettings
         if(P.Config.Hidden.Count > 0)
         {
             new NuiBuilder()
-            .Section("Hidden Aetherytes")
+            .Section("隐藏城内水晶")
             .Widget(() =>
             {
                 uint toRem = 0;
@@ -289,7 +289,7 @@ internal static unsafe class UISettings
                 {
                     ImGuiEx.Text($"{Svc.Data.GetExcelSheet<Aetheryte>().GetRow(x)?.AethernetName.Value?.Name.ToString() ?? x.ToString()}");
                     ImGui.SameLine();
-                    if(ImGui.SmallButton($"Delete##{x}"))
+                    if(ImGui.SmallButton($"删除##{x}"))
                     {
                         toRem = x;
                     }
@@ -306,23 +306,23 @@ internal static unsafe class UISettings
     private static void DrawExpert()
     {
         new NuiBuilder()
-        .Section("Expert Settings")
+        .Section("专家设置")
         .Widget(() =>
         {
-            ImGui.Checkbox($"Slow down aetheryte teleporting", ref P.Config.SlowTeleport);
-            ImGuiEx.HelpMarker($"Slows down aethernet teleportation by specified amount.");
+            ImGui.Checkbox($"减慢城内以太水晶传送速度", ref P.Config.SlowTeleport);
+            ImGuiEx.HelpMarker($"将城内以太水晶传送速度减慢指定的量。");
             if(P.Config.SlowTeleport)
             {
                 ImGui.Indent();
                 ImGui.SetNextItemWidth(200f);
-                ImGui.DragInt("Teleport delay (ms)", ref P.Config.SlowTeleportThrottle);
+                ImGui.DragInt("传送延迟（毫秒）", ref P.Config.SlowTeleportThrottle);
                 ImGui.Unindent();
             }
-            ImGuiEx.CheckboxInverted($"Skip waiting until game screen is ready", ref P.Config.WaitForScreenReady);
-            ImGuiEx.HelpMarker($"Enable this option for faster teleports but be careful that you may get stuck.");
-            ImGui.Checkbox($"Hide progress bar", ref P.Config.NoProgressBar);
-            ImGuiEx.HelpMarker($"Hiding progress bar leaves you with no way to stop Lifestream from executing it's tasks.");
-            ImGuiEx.CheckboxInverted($"Don't walk to nearby aetheryte on world change command from greater distance", ref P.Config.WalkToAetheryte);
+            ImGuiEx.CheckboxInverted($"跳过直到游戏屏幕准备好的等待", ref P.Config.WaitForScreenReady);
+            ImGuiEx.HelpMarker($"启用此选项可以加快传送速度，但要小心，您可能会被卡住。");
+            ImGui.Checkbox($"隐藏进度条", ref P.Config.NoProgressBar);
+            ImGuiEx.HelpMarker($"隐藏进度条会让您无法阻止 Lifestream 执行其任务。");
+            ImGuiEx.CheckboxInverted($"在更远的距离执行跨服命令时不要走到附近的以太之光", ref P.Config.WalkToAetheryte);
         })
         .Draw();
     }

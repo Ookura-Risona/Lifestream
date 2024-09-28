@@ -18,5 +18,5 @@ public class HousePathData
     public bool IsPrivate;
     public ulong CID;
     public bool EnableHouseEnterModeOverride = false;
-    public HouseEnterMode EnterModeOverride = HouseEnterMode.None;
+    public HouseEnterMode EnterModeOverride = HouseEnterMode.无;
 }

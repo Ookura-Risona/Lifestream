@@ -15,9 +15,9 @@ internal static class Lang
 
     internal static Dictionary<WorldChangeAetheryte, string> WorldChangeAetherytes = new()
     {
-        [WorldChangeAetheryte.Gridania] = "New Gridania",
-        [WorldChangeAetheryte.Uldah] = "Ul'Dah - Steps of Thal",
-        [WorldChangeAetheryte.Limsa] = "Limsa Lominsa Lower Decks (not recommended)"
+        [WorldChangeAetheryte.Gridania] = "格里达尼亚新街",
+        [WorldChangeAetheryte.Uldah] = "乌尔达哈来生回廊",
+        [WorldChangeAetheryte.Limsa] = "利姆萨·罗敏萨下层甲板 (不推荐)"
     };
 
     internal static class Symbols
@@ -25,7 +25,7 @@ internal static class Lang
         internal const string HomeWorld = "";
     }
 
-    internal static readonly string[] LogInPartialText = ["Logging in with", "Log in with", "でログインします。", "einloggen?", "eingeloggt.", "Se connecter avec", "Vous allez vous connecter avec", "Souhaitez-vous vous connecter avec", "登入吗？", "登入嗎？"];
+    internal static readonly string[] LogInPartialText = ["Logging in with", "Log in with", "でログインします。", "einloggen?", "eingeloggt.", "Se connecter avec", "Vous allez vous connecter avec", "Souhaitez-vous vous connecter avec", "登录吗？", "登入嗎？"];
 
     /*
     1	TEXT_AETHERYTE_TOWN_WARP<Gui(69)/> Aethernet.
@@ -52,7 +52,7 @@ internal static class Lang
     //0	TEXT_AETHERYTEISHGARD_HWD_WARP	<Gui(69)/> 蒼天街転送
     //0	TEXT_AETHERYTEISHGARD_HWD_WARP<Gui(69)/> Himmelsstadt
     //0	TEXT_AETHERYTEISHGARD_HWD_WARP	<Gui(69)/> Azurée
-    internal static readonly string[] TravelToFirmament = ["Travel to the Firmament.", "蒼天街転送", "Himmelsstadt", "Azurée", "传送到苍天街", "傳送到蒼天街"];
+    internal static readonly string[] TravelToFirmament = ["Travel to the Firmament.", "蒼天街転送", "Himmelsstadt", "Azurée", "传送到天穹街", "傳送到蒼天街"];
 
     //2	TEXT_AETHERYTE_HOUSING_WARP	<Gui(69)/> Residential District Aethernet.
     //2	TEXT_AETHERYTE_HOUSING_WARP	<Gui(69)/> 冒険者居住区転送
@@ -77,8 +77,8 @@ internal static class Lang
     //12	TEXT_AETHERYTE_MOVE_INSTANCE	<Gui(69)/> Changer d'instance
     public static readonly string[] TravelToInstancedArea = ["Travel to Instanced Area.", "インスタンスエリアへ移動", "In ein instanziiertes Areal wechseln", "Changer d'instance", "切换副本区", "切換副本區"];
     public static string ToReduceCongestion => Svc.Data.GetExcelSheet<Addon>().GetRow(2090).Text.ExtractText();
-    public static string[] TravelToYourIsland = ["Travel to your island?", "あなたの島へ向かいますか？", "Zu deiner Insel fahren?", "Voulez-vous aller sur votre île?"]; // row 4
-    public static string[] TravelToMyIsland = ["Travel to my island.", "「自分の島」に行く", "Zur eigenen Insel fahren", "Aller sur son île"]; // row 7
+    public static string[] TravelToYourIsland = ["Travel to your island?", "あなたの島へ向かいますか？", "Zu deiner Insel fahren?", "Voulez-vous aller sur votre île?", "要前往你的小岛吗？"]; // row 4
+    public static string[] TravelToMyIsland = ["Travel to my island.", "「自分の島」に行く", "Zur eigenen Insel fahren", "Aller sur son île", "前往自己的小岛"]; // row 7
     public static readonly string[] Entrance =
     [
         "ハウスへ入る",

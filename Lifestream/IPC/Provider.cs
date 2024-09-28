@@ -119,7 +119,7 @@ public class Provider
     {
         if(!P.TaskManager.IsBusy)
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.FC);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋);
             return true;
         }
         return false;
@@ -130,7 +130,7 @@ public class Provider
     {
         if(!P.TaskManager.IsBusy)
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Home);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.个人房屋);
             return true;
         }
         return false;
@@ -141,7 +141,7 @@ public class Provider
     {
         if(!P.TaskManager.IsBusy)
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Apartment);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.公寓);
             return true;
         }
         return false;
@@ -174,19 +174,19 @@ public class Provider
     [EzIPC]
     public void EnterApartment(bool enter)
     {
-        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Apartment, null, null, enter);
+        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.公寓, null, null, enter);
     }
 
     [EzIPC]
     public void EnqueueInnShortcut(int? innIndex)
     {
-        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Inn, default, innIndex);
+        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innIndex);
     }
 
     [EzIPC]
     public void EnqueueLocalInnShortcut(int? innIndex)
     {
-        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Inn, default, innIndex, useSameWorld:true);
+        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innIndex, useSameWorld:true);
     }
 
     [EzIPC]
