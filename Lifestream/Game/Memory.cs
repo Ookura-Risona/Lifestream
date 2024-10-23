@@ -3,7 +3,7 @@ using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using ECommons.EzHookManager;
 using ECommons.MathHelpers;
-using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lifestream.Enums;
 using Lifestream.Tasks.SameWorld;
@@ -29,6 +29,16 @@ internal unsafe class Memory : IDisposable
 
     [Signature("4C 8D 0D ?? ?? ?? ?? 4C 8B 11 48 8B D9", ScanType = ScanType.StaticAddress)]
     internal int* MaxInstances;
+
+    internal delegate byte OpenPartyFinderInfoDelegate(void* agentLfg, ulong contentId);
+    [EzHook("40 53 48 83 EC 20 48 8B D9 E8 ?? ?? ?? ?? 84 C0 74 07 C6 83 ?? ?? ?? ?? ?? 48 83 C4 20 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 40 53", false)]
+    internal EzHook<OpenPartyFinderInfoDelegate> OpenPartyFinderInfoHook;
+
+    internal byte OpenPartyFinderInfoDetour(void* agentLfg, ulong contentId)
+    {
+        PluginLog.Information($"{((nint)agentLfg):X16}, {contentId:X16}");
+        return OpenPartyFinderInfoHook.Original(agentLfg, contentId);
+    }
 
     private void AtkComponentTreeList_vf31Detour(nint a1, uint a2, byte a3)
     {

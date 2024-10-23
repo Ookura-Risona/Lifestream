@@ -6,7 +6,6 @@ using Lifestream.GUI;
 using Lifestream.Tasks;
 using Lifestream.Tasks.SameWorld;
 using Lifestream.Tasks.Shortcuts;
-using System.Linq;
 
 namespace Lifestream.IPC;
 public class Provider
@@ -186,7 +185,7 @@ public class Provider
     [EzIPC]
     public void EnqueueLocalInnShortcut(int? innIndex)
     {
-        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innIndex, useSameWorld:true);
+        TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innIndex, useSameWorld: true);
     }
 
     [EzIPC]
@@ -199,7 +198,7 @@ public class Provider
         return null;
     }
 
-    [EzIPC] 
+    [EzIPC]
     public bool CanChangeInstance()
     {
         return S.InstanceHandler.CanChangeInstance();
@@ -243,6 +242,12 @@ public class Provider
     {
         if(Player.Object.HomeWorld.Id != Player.Object.CurrentWorld.Id) return null;
         return TaskPropertyShortcut.GetFreeCompanyAetheryteID() != 0;
+    }
+
+    [EzIPC]
+    public void Move(List<Vector3> path)
+    {
+        P.FollowPath.Move(path, true);
     }
 
     [EzIPCEvent] public Action OnHouseEnterError;

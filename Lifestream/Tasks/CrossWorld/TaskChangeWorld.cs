@@ -8,9 +8,21 @@ internal static unsafe class TaskChangeWorld
 {
     internal static void Enqueue(string world)
     {
+        try
+        {
+            Utils.AssertCanTravel(Player.Name, Player.Object.HomeWorld.Id, Player.Object.CurrentWorld.Id, world);
+        }
+        catch(Exception e) { e.Log(); return; }
         if(P.Config.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
         if(P.Config.LeavePartyBeforeWorldChange)
         {
+            if(Svc.Condition[ConditionFlag.RecruitingWorldOnly])
+            {
+                P.TaskManager.Enqueue(WorldChange.ClosePF);
+                P.TaskManager.Enqueue(WorldChange.OpenSelfPF);
+                P.TaskManager.Enqueue(WorldChange.EndPF);
+                P.TaskManager.Enqueue(WorldChange.WaitUntilNotRecruiting);
+            }
             P.TaskManager.Enqueue(WorldChange.LeaveParty);
         }
         P.TaskManager.Enqueue(WorldChange.TargetValidAetheryte);
@@ -22,6 +34,7 @@ internal static unsafe class TaskChangeWorld
         P.TaskManager.Enqueue(() => RetryWorldVisit(world), TaskSettings.Timeout5M);
     }
 
+    private static int WorldVisitRand = 0;
     private static bool RetryWorldVisit(string targetWorld)
     {
         if(Player.Available && Player.CurrentWorld == targetWorld)
@@ -32,11 +45,20 @@ internal static unsafe class TaskChangeWorld
         {
             if(!IsScreenReady() || Svc.Condition[ConditionFlag.WaitingToVisitOtherWorld] || Svc.Condition[ConditionFlag.ReadyingVisitOtherWorld] || Svc.Condition[ConditionFlag.OccupiedInQuestEvent])
             {
-                EzThrottler.Throttle("RetryWorldVisit", Math.Max(1000, P.Config.RetryWorldVisitInterval * 1000), true);
+                EzThrottler.Throttle("RetryWorldVisit", Math.Max(1000, P.Config.RetryWorldVisitInterval * 1000 + WorldVisitRand), true);
                 return false;
+            }
+            if(Svc.Targets.Target == null && Player.Interactable)
+            {
+                var aetheryte = Svc.Objects.FirstOrDefault(x => x.IsTargetable && x.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Aetheryte && Player.DistanceTo(x) < 30f);
+                if(aetheryte != null && EzThrottler.Throttle("Target"))
+                {
+                    Svc.Targets.Target = aetheryte;
+                }
             }
             if(EzThrottler.Check("RetryWorldVisit"))
             {
+                WorldVisitRand = Random.Shared.Next(0, P.Config.RetryWorldVisitIntervalDelta*1000);
                 P.TaskManager.BeginStack();
                 TaskChangeWorld.Enqueue(targetWorld);
                 P.TaskManager.EnqueueStack();

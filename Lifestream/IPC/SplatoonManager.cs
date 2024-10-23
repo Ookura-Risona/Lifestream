@@ -30,12 +30,13 @@ public class SplatoonManager
 
     public void RenderPath(IReadOnlyList<Vector3> path, bool addPlayer = true, bool addNumbers = false)
     {
+        if(!Splatoon.IsConnected()) return;
         Vector3? prev = null;
         if(path != null && path.Count > 0)
         {
             for(var i = 0; i < path.Count; i++)
             {
-                var point = GetNextPoint(addNumbers?(i+1).ToString():"");
+                var point = GetNextPoint(addNumbers ? (i + 1).ToString() : "");
                 point.SetRefCoord(path[i]);
                 var line = GetNextLine();
                 line.SetRefCoord(path[i]);

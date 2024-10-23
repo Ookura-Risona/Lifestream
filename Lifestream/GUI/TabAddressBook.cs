@@ -1,24 +1,16 @@
-﻿using ECommons;
-using ECommons.ChatMethods;
-using ECommons.Configuration;
+﻿using ECommons.Configuration;
 using ECommons.ExcelServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.GameHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Lifestream.Data;
 using Lifestream.Enums;
-using Lifestream.Tasks.CrossDC;
-using NightmareUI.OtterGuiWrapper.FileSystems;
-using NightmareUI.OtterGuiWrapper.FileSystems.Generic;
-using OtterGui.Filesystem;
-using System.Collections.Frozen;
-using System.Windows.Forms;
 using SortMode = Lifestream.Data.SortMode;
 
 namespace Lifestream.GUI;
 public static unsafe class TabAddressBook
 {
-    public static readonly Dictionary<ResidentialAetheryteKind, string> ResidentialNames = new Dictionary<ResidentialAetheryteKind, string>()
+    public static readonly Dictionary<ResidentialAetheryteKind, string> ResidentialNames = new()
     {
         [ResidentialAetheryteKind.Gridania] = "薰衣草苗圃",
         [ResidentialAetheryteKind.Limsa] = "海雾村",
@@ -27,7 +19,7 @@ public static unsafe class TabAddressBook
         [ResidentialAetheryteKind.Foundation] = "穹顶皓天",
     };
 
-    public static readonly Dictionary<SortMode, string> SortModeNames = new Dictionary<SortMode, string>()
+    public static readonly Dictionary<SortMode, string> SortModeNames = new()
     {
         [SortMode.Manual] = "手动（拖放）",
         [SortMode.Name] = "名字（A-Z）",

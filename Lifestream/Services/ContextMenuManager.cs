@@ -4,11 +4,6 @@ using ECommons.ExcelServices;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lifestream.GUI.Windows;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lifestream.Services;
 public unsafe class ContextMenuManager : IDisposable
@@ -25,14 +20,17 @@ public unsafe class ContextMenuManager : IDisposable
 
     private void ContextMenu_OnMenuOpened(IMenuOpenedArgs args)
     {
-        if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m))
+        if(P.Config.AllowDCTravelFromCharaSelect)
         {
-            if(args.Target is MenuTargetDefault target && m.Characters.TryGetFirst(x => x.IsSelected, out var chara))
+            if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m))
             {
-                args.AddMenuItem(ConstructMenuItemFor(chara.Name, chara.HomeWorld, chara.CurrentWorld));
-                if(chara.HomeWorld != chara.CurrentWorld)
+                if(args.Target is MenuTargetDefault target && m.Characters.TryGetFirst(x => x.IsSelected, out var chara))
                 {
-                    args.AddMenuItem(ConstructReturnHomeMenuItemFor(chara.Name, chara.HomeWorld, chara.CurrentWorld));
+                    args.AddMenuItem(ConstructMenuItemFor(chara.Name, chara.HomeWorld, chara.CurrentWorld));
+                    if(chara.HomeWorld != chara.CurrentWorld)
+                    {
+                        args.AddMenuItem(ConstructReturnHomeMenuItemFor(chara.Name, chara.HomeWorld, chara.CurrentWorld, chara.IsVisitingAnotherDC));
+                    }
                 }
             }
         }
@@ -52,7 +50,7 @@ public unsafe class ContextMenuManager : IDisposable
         return ret;
     }
 
-    private MenuItem ConstructReturnHomeMenuItemFor(string name, uint homeWorld, uint currentWorld)
+    private MenuItem ConstructReturnHomeMenuItemFor(string name, uint homeWorld, uint currentWorld, bool isVisitingAnotherDC)
     {
         var ret = new MenuItem()
         {
@@ -60,8 +58,15 @@ public unsafe class ContextMenuManager : IDisposable
             Prefix = (SeIconChar)'',
             OnClicked = (args) =>
             {
-                P.TaskManager.Enqueue(() => !(TryGetAddonByName<AtkUnitBase>("ContextMenu", out var c) && c->IsVisible));
-                P.TaskManager.Enqueue(() => CharaSelectOverlay.Command(name, currentWorld, homeWorld, ExcelWorldHelper.Get(homeWorld)));
+                if(isVisitingAnotherDC)
+                {
+                    CharaSelectOverlay.ReconnectToValidDC(name, currentWorld, homeWorld, ExcelWorldHelper.Get(homeWorld), false);
+                }
+                else
+                {
+                    P.TaskManager.Enqueue(() => !(TryGetAddonByName<AtkUnitBase>("ContextMenu", out var c) && c->IsVisible));
+                    P.TaskManager.Enqueue(() => CharaSelectOverlay.Command(name, currentWorld, homeWorld, ExcelWorldHelper.Get(homeWorld), false));
+                }
             }
         };
         return ret;

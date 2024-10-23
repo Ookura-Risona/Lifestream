@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using ECommons;
 using ECommons.ExcelServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.GameFunctions;
@@ -7,9 +6,7 @@ using ECommons.GameHelpers;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using ImGuizmoNET;
 using Lifestream.Data;
 using Lifestream.Schedulers;
 using Lifestream.Tasks.SameWorld;
@@ -17,7 +14,7 @@ using Lifestream.Tasks.Utility;
 using Lumina.Excel.GeneratedSheets;
 
 namespace Lifestream.Tasks.Shortcuts;
-public unsafe static class TaskPropertyShortcut
+public static unsafe class TaskPropertyShortcut
 {
     public static readonly SortedDictionary<uint, (uint Aethernet, Vector3[] Path)> InnData = new()
     {
@@ -101,7 +98,7 @@ public unsafe static class TaskPropertyShortcut
         }, "ReturnToHomeTask");
     }
 
-    static bool ExecuteByPropertyType(PropertyType type, HouseEnterMode? mode, int? innIndex, bool? enterApartment)
+    private static bool ExecuteByPropertyType(PropertyType type, HouseEnterMode? mode, int? innIndex, bool? enterApartment)
     {
         if(type == PropertyType.个人房屋 && GetPrivateHouseAetheryteID() != 0)
         {
@@ -133,7 +130,7 @@ public unsafe static class TaskPropertyShortcut
         P.TaskManager.BeginStack();
         P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(id));
         P.TaskManager.Enqueue(() => !IsScreenReady());
-        P.TaskManager.Enqueue(() => IsScreenReady()  && Player.Interactable);
+        P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
         if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.走到门口, HouseEnterMode.进入房屋))
         {
             P.TaskManager.Enqueue(() =>
@@ -326,7 +323,7 @@ public unsafe static class TaskPropertyShortcut
         return false;
     }
 
-    static uint GetInnTerritoryId()
+    private static uint GetInnTerritoryId()
     {
         if(P.Config.PreferredInn != 0)
         {

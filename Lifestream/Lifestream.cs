@@ -1,7 +1,6 @@
 ﻿using AutoRetainerAPI;
 using Dalamud.Interface.ImGuiNotification;
 using ECommons.Automation.NeoTaskManager;
-using ECommons.Automation.NeoTaskManager.Tasks;
 using ECommons.ChatMethods;
 using ECommons.Configuration;
 using ECommons.Events;
@@ -29,7 +28,6 @@ using Lifestream.Tasks.CrossWorld;
 using Lifestream.Tasks.SameWorld;
 using Lifestream.Tasks.Shortcuts;
 using Lumina.Excel.GeneratedSheets;
-using NightmareUI.OtterGuiWrapper.FileSystems.Generic;
 using NotificationMasterAPI;
 using GrandCompany = ECommons.ExcelServices.GrandCompany;
 
@@ -86,6 +84,7 @@ public unsafe class Lifestream : IDalamudPlugin
         new TickScheduler(delegate
         {
             Config = EzConfig.Init<Config>();
+            Utils.CheckConfigMigration();
             EzConfigGui.Init(MainGui.Draw);
             Overlay = new();
             TaskManager = new();
@@ -104,10 +103,10 @@ public unsafe class Lifestream : IDalamudPlugin
                 /li <地址> - 前往当前服务器中的指定地块，其中地址 - 地块地址格式为“住宅区,房区,房号”格式（不带引号）
                 /li <服务器> <地址> - 前往指定服务器的指定地址
 
-                /li gc|hc - 前往你的大国防联军
-                /li gc|hc <大国防联军名字> - 前往指定大国防联军
-                /li gcc|hcc - 前往你大国防联军的部队箱
-                /li gcc|hcc <company name> - 前往指定大国防联军的部队箱
+                /li gc|hc - 前往你的大国防联军 (需安装 vnavmesh)
+                /li gc|hc <大国防联军名字> - 前往指定大国防联军 (需安装 vnavmesh)
+                /li gcc|hcc - 前往你大国防联军的部队箱 (需安装 vnavmesh)
+                /li gcc|hcc <大国防联军名字> - 前往指定大国防联军的部队箱 (需安装 vnavmesh)
                 ...其中“gc”或“gcc”将把你带到当前服务器的大国防联军，而“hc”或“hcc”将首先让你返回原始服务器
 
                 /li auto - 前往您的个人房屋、部队房屋或公寓，无论在此顺序中找到什么
@@ -116,6 +115,7 @@ public unsafe class Lifestream : IDalamudPlugin
                 /li apartment|apt - 前往你的公寓
 
                 /li w|world|open|select - 打开跨服窗口
+                /li island - 前往无人岛
                 """);
             DataStore = new();
             ProperOnLogin.RegisterAvailable(() => DataStore.BuildWorlds());
@@ -244,15 +244,15 @@ public unsafe class Lifestream : IDalamudPlugin
                 TaskMBShortcut.Enqueue();
             }
         }
-        else if (arguments.EqualsIgnoreCaseAny("island", "is", "sanctuary") || arguments.StartsWithAny("island ", "is ", "sanctuary "))
+        else if(arguments.EqualsIgnoreCaseAny("island", "is", "sanctuary") || arguments.StartsWithAny("island ", "is ", "sanctuary "))
         {
             var arglist = arguments.Split(" ");
-            if (arglist.Length == 1)
+            if(arglist.Length == 1)
                 TaskISShortcut.Enqueue();
             else
             {
                 var name = arglist[1];
-                if (DataStore.IslandNPCs.TryGetFirst(x => x.Value.Any(y => y.Contains(name, StringComparison.OrdinalIgnoreCase)), out var npc))
+                if(DataStore.IslandNPCs.TryGetFirst(x => x.Value.Any(y => y.Contains(name, StringComparison.OrdinalIgnoreCase)), out var npc))
                     TaskISShortcut.Enqueue(npc.Key);
                 else
                     DuoLog.Error($"Could not parse input: {name}");
@@ -286,6 +286,7 @@ public unsafe class Lifestream : IDalamudPlugin
                 }
                 foreach(var x in Config.CustomAliases)
                 {
+                    if(!x.Enabled || x.Alias == "") continue;
                     if(x.Alias.EqualsIgnoreCase(primary))
                     {
                         x.Enqueue();
@@ -313,20 +314,24 @@ public unsafe class Lifestream : IDalamudPlugin
         }
     }
 
-    internal void TPAndChangeWorld(string destinationWorld, bool isDcTransfer = false, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null)
+    internal void TPAndChangeWorld(string destinationWorld, bool isDcTransfer = false, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool skipChecks = false)
     {
         try
         {
+            Utils.AssertCanTravel(Player.Name, Player.Object.HomeWorld.Id, Player.Object.CurrentWorld.Id, destinationWorld);
             CharaSelectVisit.ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
-            if(isDcTransfer && !P.Config.AllowDcTransfer)
+            if(!skipChecks)
             {
-                Notify.Error($"Data center transfers are not enabled in the configuration.");
-                return;
-            }
-            if(TaskManager.IsBusy)
-            {
-                Notify.Error("Another task is in progress");
-                return;
+                if(isDcTransfer && !P.Config.AllowDcTransfer)
+                {
+                    Notify.Error($"Data center transfers are not enabled in the configuration.");
+                    return;
+                }
+                if(TaskManager.IsBusy)
+                {
+                    Notify.Error("Another task is in progress");
+                    return;
+                }
             }
             if(!Player.Available)
             {
@@ -376,9 +381,12 @@ public unsafe class Lifestream : IDalamudPlugin
                     {
                         TaskTpToAethernetDestination.Enqueue(gateway.Value.AdjustGateway());
                     }
-                    if(Config.LeavePartyBeforeLogout && (Svc.Party.Length > 1 || Svc.Condition[ConditionFlag.ParticipatingInCrossWorldPartyOrAlliance]))
+                    if(Config.LeavePartyBeforeLogout)
                     {
-                        TaskManager.EnqueueTask(new(WorldChange.LeaveAnyParty));
+                        if(Svc.Party.Length > 1 || Svc.Condition[ConditionFlag.ParticipatingInCrossWorldPartyOrAlliance])
+                        {
+                            TaskManager.EnqueueTask(new(WorldChange.LeaveAnyParty));
+                        }
                     }
                 }
                 if(type == DCVType.HomeToGuest)
@@ -407,6 +415,10 @@ public unsafe class Lifestream : IDalamudPlugin
             else
             {
                 TaskRemoveAfkStatus.Enqueue();
+                /*if(Config.LeavePartyBeforeWorldChangeSameWorld && (Svc.Party.Length > 1 || Svc.Condition[ConditionFlag.ParticipatingInCrossWorldPartyOrAlliance]))
+                {
+                    TaskManager.EnqueueTask(new(WorldChange.LeaveAnyParty));
+                }*/
                 TaskTPAndChangeWorld.Enqueue(destinationWorld, gateway.Value.AdjustGateway(), false);
                 if(doNotify == true) TaskDesktopNotification.Enqueue($"Arrived to {destinationWorld}");
                 CharaSelectVisit.EnqueueSecondary(noSecondaryTeleport, secondaryTeleport);

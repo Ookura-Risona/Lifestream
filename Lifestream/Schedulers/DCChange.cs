@@ -6,14 +6,13 @@ using ECommons.Automation.UIInput;
 using ECommons.ExcelServices;
 using ECommons.GameHelpers;
 using ECommons.Throttlers;
-using ECommons.UIHelpers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lifestream.AtkReaders;
+using Lifestream.Tasks.Login;
 using Lumina.Excel.GeneratedSheets;
-using Action = System.Action;
 
 namespace Lifestream.Schedulers;
 
@@ -163,13 +162,7 @@ internal static unsafe class DCChange
         }
         if(TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) && IsAddonReady(addon))
         {
-            if(Utils.TryGetCharacterIndex(name, world, out var index) && DCThrottle && EzThrottler.Throttle("OpenContextMenuForChara"))
-            {
-                PluginLog.Debug($"[DCChange] Opening context menu index {index}");
-                Callback.Fire(addon, true, (int)29, (int)1, (int)index);
-                DCRethrottle();
-                return false;
-            }
+            TaskChangeCharacter.SelectCharacter(name, ExcelWorldHelper.GetName(world), true);
         }
         else
         {

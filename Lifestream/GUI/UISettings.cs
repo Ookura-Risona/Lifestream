@@ -1,11 +1,9 @@
 ﻿using ECommons.Configuration;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lifestream.Tasks.Shortcuts;
 using Lumina.Excel.GeneratedSheets;
 using NightmareUI;
 using NightmareUI.PrimaryUI;
-using System;
 using Action = System.Action;
 
 namespace Lifestream.GUI;
@@ -15,7 +13,7 @@ internal static unsafe class UISettings
     private static string AddNew = "";
     internal static void Draw()
     {
-        NuiTools.ButtonTabs([[new("常规", () => Wrapper(DrawGeneral)), new("悬浮窗", () => Wrapper(DrawOverlay)), new("专业", () => Wrapper(DrawExpert))]]);
+        NuiTools.ButtonTabs([[new("常规", () => Wrapper(DrawGeneral)), new("悬浮窗", () => Wrapper(DrawOverlay)), new("专业", () => Wrapper(DrawExpert)), new("账号", () => Wrapper(UIServiceAccount.Draw))]]);
     }
 
     private static void Wrapper(Action action)
@@ -48,8 +46,14 @@ internal static unsafe class UISettings
             ImGui.Checkbox($"在弹出通知中显示传送目的地", ref P.Config.DisplayPopupNotifications);
             ImGui.Checkbox("重试同服务器失败的服务器访问", ref P.Config.RetryWorldVisit);
             ImGui.Indent();
-            ImGui.SetNextItemWidth(150f);
+            ImGui.SetNextItemWidth(100f);
             ImGui.InputInt("重试间隔，秒##2", ref P.Config.RetryWorldVisitInterval.ValidateRange(1, 120));
+            ImGui.SameLine();
+            ImGuiEx.Text("+ 最多");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(100f);
+            ImGui.InputInt("秒##2", ref P.Config.RetryWorldVisitIntervalDelta.ValidateRange(0, 120));
+            ImGuiEx.HelpMarker("为了让它看起来不那么像机器人");
             ImGui.Unindent();
             //ImGui.Checkbox("Use Return instead of Teleport when possible", ref P.Config.UseReturn);
             //ImGuiEx.HelpMarker("This includes any IPC calls");
@@ -71,8 +75,8 @@ internal static unsafe class UISettings
                 ImGui.EndCombo();
             }
             ImGui.Separator();
-            ImGuiEx.Text("\"/li auto\"命令优先级:");
-            for(int i = 0; i < P.Config.PropertyPrio.Count; i++)
+            ImGuiEx.Text("\"/li auto\" 命令优先级:");
+            for(var i = 0; i < P.Config.PropertyPrio.Count; i++)
             {
                 var d = P.Config.PropertyPrio[i];
                 ImGui.PushID($"c{i}");
@@ -142,6 +146,10 @@ internal static unsafe class UISettings
         .Section("移动")
         .Checkbox("自动移动时使用 冲刺 和 速行", () => ref P.Config.UseSprintPeloton)
 
+        .Section("Character Select Menu")
+        .Checkbox("Enable Data center and World visit from Character Select Menu", () => ref P.Config.AllowDCTravelFromCharaSelect)
+        .Checkbox("Use world visit instead of DC visit to travel to same world on guest DC", () => ref P.Config.UseGuestWorldTravel)
+
         .Draw();
     }
 
@@ -172,17 +180,17 @@ internal static unsafe class UISettings
                     ImGui.SetNextItemWidth(200f);
                     ImGui.DragFloat2("偏移", ref P.Config.Offset);
 
-                    UtilsUI.NextSection();
-
-                    ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("按钮左/右内边距", ref P.Config.ButtonWidth);
-                    ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("以太水晶按钮顶部/底部填充", ref P.Config.ButtonHeightAetheryte);
-                    ImGui.SetNextItemWidth(100f);
-                    ImGui.InputInt("服务器按钮顶部/底部填充", ref P.Config.ButtonHeightWorld);
-
                     ImGui.Unindent();
                 }
+
+                UtilsUI.NextSection();
+
+                ImGui.SetNextItemWidth(100f);
+                ImGui.InputInt3("按钮左/右内边距", ref P.Config.ButtonWidthArray[0]);
+                ImGui.SetNextItemWidth(100f);
+                ImGui.InputInt("以太水晶按钮顶部/底部填充", ref P.Config.ButtonHeightAetheryte);
+                ImGui.SetNextItemWidth(100f);
+                ImGui.InputInt("服务器按钮顶部/底部填充", ref P.Config.ButtonHeightWorld);
                 ImGui.Unindent();
             }
         })
