@@ -76,7 +76,7 @@ public class CustomAliasCommand
                 }
             });
         }
-        else if(Kind == CustomAliasKind.Use_Aethernet)
+        else if(Kind == CustomAliasKind.使用传送网)
         {
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
             var aethernetPoint = Svc.Data.GetExcelSheet<Aetheryte>().GetRow(Aetheryte).AethernetName.Value.Name.ExtractText();

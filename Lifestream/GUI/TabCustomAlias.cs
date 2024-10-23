@@ -96,13 +96,13 @@ public static class TabCustomAlias
                 Splatoon.DisplayOnce(point);
             }
         }
-        else if(command.Kind == CustomAliasKind.Walk_to_point)
+        else if(command.Kind == CustomAliasKind.步行到坐标)
         {
             var point = P.SplatoonManager.GetNextPoint($"{index + 1}: Walk to");
             point.SetRefCoord(command.Point);
             Splatoon.DisplayOnce(point);
         }
-        else if(command.Kind == CustomAliasKind.Navmesh_to_point)
+        else if(command.Kind == CustomAliasKind.寻路到坐标)
         {
             var point = P.SplatoonManager.GetNextPoint($"{index + 1}: Navmesh to");
             point.SetRefCoord(command.Point);
@@ -148,7 +148,7 @@ public static class TabCustomAlias
             ImGuiEx.Text("选择服务器");
         }
 
-        if(command.Kind == CustomAliasKind.Use_Aethernet)
+        if(command.Kind == CustomAliasKind.使用传送网)
         {
             ImGui.SetNextItemWidth(150f);
             ImGuiEx.Combo("Select aethernet shard to teleport to", ref command.Aetheryte, aethernet, names: aethernetNames);

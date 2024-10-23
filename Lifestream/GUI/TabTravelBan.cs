@@ -19,11 +19,11 @@ public static class TabTravelBan
         ImGuiEx.Text(EColor.RedBright, FontAwesomeIcon.ExclamationTriangle.ToIconString());
         ImGui.PopFont();
         ImGui.SameLine();
-        ImGuiEx.TextWrapped(EColor.RedBright, "Be mindful that this function is meant to be the last chance to avoid unrecoverable mistakes. Using this function may break other plugins that rely on Lifestream. Blocking travel in a specific direction will block it only via Lifestream. You can still travel manually.");
+        ImGuiEx.TextWrapped(EColor.RedBright, "请注意，此功能是避免不可恢复错误的最后机会。使用此功能可能会破坏依赖 Lifestream 的其他插件。阻止特定方向的旅行只会阻止通过 Lifestream 进行的旅行。您仍然可以手动出行。");
 
         ImGuiEx.LineCentered(() =>
         {
-            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "Add new entry"))
+            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "添加新条目"))
             {
                 var entry = new TravelBanInfo();
                 if(Player.Available)
@@ -37,9 +37,9 @@ public static class TabTravelBan
         if(ImGui.BeginTable("Bantable", 5, ImGuiTableFlags.RowBg | ImGuiTableFlags.NoSavedSettings | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders))
         {
             ImGui.TableSetupColumn("##enabled");
-            ImGui.TableSetupColumn("Character name and world", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("Travel source");
-            ImGui.TableSetupColumn("Travel destination");
+            ImGui.TableSetupColumn("角色名称和服务器", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("旅行出发地");
+            ImGui.TableSetupColumn("旅行目的地");
             ImGui.TableSetupColumn("##control");
 
             ImGui.TableHeadersRow();

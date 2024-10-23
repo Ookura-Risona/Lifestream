@@ -47,7 +47,7 @@ internal static unsafe class UISettings
             ImGui.Checkbox("重试同服务器失败的服务器访问", ref P.Config.RetryWorldVisit);
             ImGui.Indent();
             ImGui.SetNextItemWidth(100f);
-            ImGui.InputInt("重试间隔，秒##2", ref P.Config.RetryWorldVisitInterval.ValidateRange(1, 120));
+            ImGui.InputInt("重试间隔（秒）##2", ref P.Config.RetryWorldVisitInterval.ValidateRange(1, 120));
             ImGui.SameLine();
             ImGuiEx.Text("+ 最多");
             ImGui.SameLine();
@@ -146,9 +146,9 @@ internal static unsafe class UISettings
         .Section("移动")
         .Checkbox("自动移动时使用 冲刺 和 速行", () => ref P.Config.UseSprintPeloton)
 
-        .Section("Character Select Menu")
-        .Checkbox("Enable Data center and World visit from Character Select Menu", () => ref P.Config.AllowDCTravelFromCharaSelect)
-        .Checkbox("Use world visit instead of DC visit to travel to same world on guest DC", () => ref P.Config.UseGuestWorldTravel)
+        .Section("角色选择菜单")
+        .Checkbox("从角色选择菜单启用数据中心和服务器访问", () => ref P.Config.AllowDCTravelFromCharaSelect)
+        .Checkbox("在访客数据中心上前往同一个服务器时使用跨服传送而不是数据中心访问", () => ref P.Config.UseGuestWorldTravel)
 
         .Draw();
     }
