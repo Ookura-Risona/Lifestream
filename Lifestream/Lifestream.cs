@@ -68,23 +68,18 @@ public unsafe class Lifestream : IDalamudPlugin
     public SplatoonManager SplatoonManager;
     public bool DisableHousePathData = false;
     public CharaSelectOverlay CharaSelectOverlay;
-
+    private bool IsDev;
     public Lifestream(IDalamudPluginInterface pluginInterface)
     {
-        P = this;
-        ECommonsMain.Init(pluginInterface, this, Module.SplatoonAPI);
 #if !DEBUG
-        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        if (pluginInterface.IsDev || !pluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
         {
-            Svc.NotificationManager.AddNotification(new Notification()
-            {
-                Type = NotificationType.Error,
-                Title = "加载验证",
-                Content = "由于本地加载或安装来源仓库非NiGuangOwO个人仓库，插件加载失败",
-            });
+            IsDev = true;
             return;
         }
 #endif
+        P = this;
+        ECommonsMain.Init(pluginInterface, this, Module.SplatoonAPI);
         new TickScheduler(delegate
         {
             Config = EzConfig.Init<Config>();
@@ -468,10 +463,8 @@ public unsafe class Lifestream : IDalamudPlugin
     public void Dispose()
     {
 #if !DEBUG
-        if (Svc.PluginInterface.IsDev || !Svc.PluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        if (IsDev)
         {
-            ECommonsMain.Dispose();
-            P = null;
             return;
         }
 #endif

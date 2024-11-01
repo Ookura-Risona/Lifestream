@@ -6,7 +6,7 @@ namespace Lifestream.Tasks.CrossWorld;
 
 internal static unsafe class TaskChangeWorld
 {
-    internal static void Enqueue(string world)
+    internal static void Enqueue(string world, bool skipLeaveParty = false)
     {
         try
         {
@@ -14,7 +14,7 @@ internal static unsafe class TaskChangeWorld
         }
         catch(Exception e) { e.Log(); return; }
         if(P.Config.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
-        if(P.Config.LeavePartyBeforeWorldChange)
+        if(P.Config.LeavePartyBeforeWorldChange && !skipLeaveParty)
         {
             if(Svc.Condition[ConditionFlag.RecruitingWorldOnly])
             {

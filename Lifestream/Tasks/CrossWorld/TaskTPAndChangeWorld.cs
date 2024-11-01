@@ -24,7 +24,7 @@ internal static class TaskTPAndChangeWorld
         }
         if(P.ActiveAetheryte != null && P.ActiveAetheryte.Value.IsWorldChangeAetheryte())
         {
-            TaskChangeWorld.Enqueue(world);
+            TaskChangeWorld.Enqueue(world, true);
         }
         else
         {
@@ -48,7 +48,7 @@ internal static class TaskTPAndChangeWorld
             }, "ConditionalLockonTask"));
             P.TaskManager.Enqueue(WorldChange.WaitUntilMasterAetheryteExists);
             P.TaskManager.EnqueueDelay(10, true);
-            TaskChangeWorld.Enqueue(world);
+            TaskChangeWorld.Enqueue(world, true);
         }
         if(insert)
         {
