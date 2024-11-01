@@ -10,6 +10,7 @@ using ECommons.Reflection;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -337,9 +338,24 @@ internal static unsafe class UIDebug
 
     private static void Debug()
     {
+        if(ImGui.CollapsingHeader("Custom aethernet"))
+        {
+            if(ImGui.Button("Copy target") && Svc.Targets.Target != null)
+            {
+                var pname = TerritoryInfo.Instance()->AreaPlaceNameId;
+                var pname2 = TerritoryInfo.Instance()->SubAreaPlaceNameId;
+                Copy($"""
+                    new(new({Svc.Targets.Target.Position.X:F1}f, {Svc.Targets.Target.Position.Z:F1}f), {Svc.ClientState.TerritoryType}, GetPlaceName({pname}), Base), //{Svc.Data.GetExcelSheet<PlaceName>().GetRow(pname)?.Name?.ExtractText()} ({pname}), {Svc.Data.GetExcelSheet<PlaceName>().GetRow(pname2)?.Name?.ExtractText()} ({pname2}), 
+                    """);
+            }
+            ImGuiEx.Text($"Active: {P.CustomAethernet.ActiveAetheryte}");
+            ImGuiEx.Text($"Valid: {Utils.GetValidAetheryte()}");
+            if(Utils.GetValidAetheryte() != null) ImGuiEx.Text($"FromIGameObject: {P.CustomAethernet.GetFromIGameObject(Utils.GetValidAetheryte())}");
+        }
+        if(ImGui.Button("Get file list")) Utils.ReadClipboardFiles();
         if(ImGui.Button("Open PF self"))
         {
-            P.Memory.OpenPartyFinderInfoDetour(AgentModule.Instance()->GetAgentByInternalId(AgentId.LookingForGroup), Player.CID); 
+            P.Memory.OpenPartyFinderInfoDetour(AgentModule.Instance()->GetAgentByInternalId(AgentId.LookingForGroup), Player.CID);
         }
         if(ImGui.CollapsingHeader("Lobby2"))
         {
@@ -360,20 +376,45 @@ internal static unsafe class UIDebug
             ref var exit = ref Ref<Vector3>.Get("exit");
             ref var list = ref Ref<List<Vector3>>.Get();
             ref var listList = ref Ref<List<List<Vector3>>>.Get();
-            ref var prec = ref Ref<int>.Get();
+            ref var prec = ref Ref<float>.Get("precision");
             ref var tol = ref Ref<int>.Get("tlr");
+            ref var lim1 = ref Ref<float>.Get("lim1");
+            ref var lim2 = ref Ref<float>.Get("lim2");
+            ref var auto = ref Ref<bool>.Get("autocalc");
+            if(ImGui.Button("Import"))
+            {
+                try
+                {
+                    var des = JsonConvert.DeserializeObject<CustomAliasCommand>(Paste());
+                    target = des.CenterPoint.ToVector3();
+                    exit = des.CircularExitPoint;
+                    prec = des.Precision;
+                    tol = des.Tolerance;
+                    lim1 = des.Clamp?.Min ?? 0;
+                    lim2 = des.Clamp?.Max ?? 0;
+                }
+                catch(Exception e)
+                {
+                    e.LogDuo();
+                }
+            }
             if(ImGui.Button("Set target")) target = Svc.Targets.Target?.Position ?? default;
             ImGui.SameLine();
             ImGuiEx.Text($"{target}");
             if(ImGui.Button("Set exit")) exit = Player.Position;
             ImGui.SameLine();
             ImGuiEx.Text($"{exit}");
-            ImGui.InputInt("Precision", ref prec);
+            ImGui.InputFloat("Precision", ref prec);
             ImGui.InputInt("Tolerance", ref tol);
-            if(ImGui.Button("Calculate"))
+            ImGui.InputFloat("Limit1", ref lim1);
+            ImGui.InputFloat("Limit2", ref lim2);
+            if(ImGui.Button("Calculate") || (auto && EzThrottler.Throttle("AutoRec", 100)))
             {
-                list = MathHelper.CalculateCircularMovement(target, Player.Position, exit, out listList, prec, tol);
+                (float, float)? lmt = lim2 > lim1 ? (lim1, lim2) : null;
+                list = MathHelper.CalculateCircularMovement(target, Player.Position, exit, out listList, prec, tol, lmt);
             }
+            ImGui.SameLine();
+            ImGui.Checkbox("AutoCalc", ref auto);
             if(list != null)
             {
                 ImGuiEx.Text($"List: {list.Print()}");

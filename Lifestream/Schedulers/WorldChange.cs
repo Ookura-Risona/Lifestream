@@ -42,6 +42,7 @@ internal static unsafe class WorldChange
     {
         if(!Player.Available) return false;
         if(Player.IsAnimationLocked) return false;
+        if(!Utils.DismountIfNeeded()) return false;
         if(IsOccupied()) return false;
         var a = Utils.GetValidAetheryte();
         if(a != null && Svc.Targets.Target?.Address == a.Address)
@@ -75,7 +76,7 @@ internal static unsafe class WorldChange
         {
             if(x->YesButton->IsEnabled && EzThrottler.Throttle("ConfirmWorldVisit"))
             {
-                new SelectYesnoMaster(x).Yes();
+                new AddonMaster.SelectYesno(x).Yes();
                 return true;
             }
         }
@@ -182,6 +183,20 @@ internal static unsafe class WorldChange
                 }
             }
         }
+        else if(P.CustomAethernet.QuasiAethernetZones.Contains(Svc.ClientState.TerritoryType) && TryGetAddonMaster<AddonMaster.SelectString>(out var m) && m.IsAddonReady)
+        {
+            foreach(var x in m.Entries)
+            {
+                if(x.Text.Contains(name))
+                {
+                    if(EzThrottler.Throttle("TeleportToAethernetDestination", 2000))
+                    {
+                        x.Select();
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
@@ -271,7 +286,7 @@ internal static unsafe class WorldChange
 
     internal static bool ClosePF()
     {
-        if (TryGetAddonMaster<AddonMaster.LookingForGroupDetail>(out var m))
+        if(TryGetAddonMaster<AddonMaster.LookingForGroupDetail>(out var m))
         {
             if(m.IsAddonReady && Utils.GenericThrottle) Callback.Fire(m.Base, true, -1);
         }

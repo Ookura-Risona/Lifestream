@@ -6,7 +6,7 @@ using Lifestream.Data;
 using Lumina.Excel.GeneratedSheets;
 using Path = System.IO.Path;
 
-namespace Lifestream.Systems;
+namespace Lifestream.Systems.Residential;
 public sealed class ResidentialAethernet : IDisposable
 {
     private const string FileName = "HousingData.json";

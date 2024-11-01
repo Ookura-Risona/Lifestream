@@ -79,6 +79,10 @@ internal class Overlay : Window
                 actions.Add(() => DrawResidentialAethernet(true));
             }
         }
+        else if(P.CustomAethernet.ZoneInfo.ContainsKey(Svc.ClientState.TerritoryType))
+        {
+            if(P.Config.ShowAethernet) actions.Add(DrawCustomAethernet);
+        }
         else if(P.ActiveAetheryte != null)
         {
             if(P.Config.ShowAethernet) actions.Add(DrawNormalAethernet);
@@ -91,15 +95,15 @@ internal class Overlay : Window
             actions.Add(DrawInstances);
         }
 
-        if (actions.Count == 1)
+        if(actions.Count == 1)
         {
             Safe(actions[0]);
         }
         else
         {
-            if (ImGui.BeginTable("LifestreamTable", Math.Max(1, actions.Count), ImGuiTableFlags.NoSavedSettings))
+            if(ImGui.BeginTable("LifestreamTable", Math.Max(1, actions.Count), ImGuiTableFlags.NoSavedSettings))
             {
-                foreach (var action in actions)
+                foreach(var action in actions)
                 {
                     ImGui.TableNextColumn();
                     Safe(action);
@@ -108,7 +112,7 @@ internal class Overlay : Window
             }
         }
 
-        if (P.Config.ShowPlots && P.ResidentialAethernet.ActiveAetheryte != null)
+        if(P.Config.ShowPlots && P.ResidentialAethernet.ActiveAetheryte != null)
         {
             if(ImGui.BeginTable("##plots", 6, ImGuiTableFlags.SizingFixedSame))
             {
@@ -209,6 +213,32 @@ internal class Overlay : Window
                     var name = (P.Config.Favorites.Contains(x.ID) ? "★ " : "") + (P.Config.Renames.TryGetValue(x.ID, out var value) ? value : x.Name);
                     ResizeButton(name);
                     var d = P.ResidentialAethernet.ActiveAetheryte == x;
+                    if(ImGuiEx.Button(name, ButtonSizeAetheryte, !d))
+                    {
+                        TaskRemoveAfkStatus.Enqueue();
+                        TaskAethernetTeleport.Enqueue(x.Name);
+                    }
+                    Popup(x);
+                }
+            }
+        }
+    }
+
+    private void DrawCustomAethernet()
+    {
+        var zinfo = P.CustomAethernet.ZoneInfo[P.Territory];
+        Draw(true);
+        Draw(false);
+        void Draw(bool favorites)
+        {
+            foreach(var x in zinfo)
+            {
+                if(P.Config.Favorites.Contains(x.ID) != favorites) continue;
+                if(!P.Config.Hidden.Contains(x.ID))
+                {
+                    var name = (P.Config.Favorites.Contains(x.ID) ? "★ " : "") + (P.Config.Renames.TryGetValue(x.ID, out var value) ? value : x.Name);
+                    ResizeButton(name);
+                    var d = P.CustomAethernet.ActiveAetheryte == x;
                     if(ImGuiEx.Button(name, ButtonSizeAetheryte, !d))
                     {
                         TaskRemoveAfkStatus.Enqueue();
@@ -342,7 +372,7 @@ internal class Overlay : Window
                 ret = P.Config.ShowAethernet;
             }
         }
-        else if(canUse == AetheryteUseState.Residential)
+        else if(canUse == AetheryteUseState.Residential || canUse == AetheryteUseState.Custom)
         {
             ret = P.Config.ShowAethernet;
         }

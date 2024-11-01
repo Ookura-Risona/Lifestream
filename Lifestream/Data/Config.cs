@@ -63,16 +63,17 @@ public class Config : IEzConfig
     public bool UseReturn = true;
     public uint PreferredInn = 0;
     public List<AutoPropertyData> PropertyPrio = [new(true, TaskPropertyShortcut.PropertyType.个人房屋), new(true, TaskPropertyShortcut.PropertyType.部队房屋), new(true, TaskPropertyShortcut.PropertyType.公寓), new(true, TaskPropertyShortcut.PropertyType.旅馆)];
-    public bool EnableDvcRetry = false;
+    public bool EnableDvcRetry = true;
     public int MaxDcvRetries = 3000;
     public bool DcvUseAlternativeWorld = true;
     public int DcvRetryInterval = 30;
-    public bool RetryWorldVisit = false;
-    public int RetryWorldVisitInterval = 5;
+    public bool RetryWorldVisit = true;
+    public int RetryWorldVisitInterval = 30;
     public int RetryWorldVisitIntervalDelta = 10;
     public List<CustomAlias> CustomAliases = [];
     public bool UseGuestWorldTravel = false;
     public bool AllowDCTravelFromCharaSelect = true;
     public List<TravelBanInfo> TravelBans = [];
     public bool TerminateSelfPartyFinder = false;
+    public Dictionary<ulong, string> CharaMap = [];
 }

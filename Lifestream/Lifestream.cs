@@ -10,6 +10,7 @@ using ECommons.MathHelpers;
 using ECommons.SimpleGui;
 using ECommons.Singletons;
 using ECommons.Throttlers;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lifestream.Data;
 using Lifestream.Enums;
@@ -21,7 +22,9 @@ using Lifestream.Movement;
 using Lifestream.Schedulers;
 using Lifestream.Services;
 using Lifestream.Systems;
+using Lifestream.Systems.Custom;
 using Lifestream.Systems.Legacy;
+using Lifestream.Systems.Residential;
 using Lifestream.Tasks;
 using Lifestream.Tasks.CrossDC;
 using Lifestream.Tasks.CrossWorld;
@@ -50,6 +53,7 @@ public unsafe class Lifestream : IDalamudPlugin
     public TaskManager TaskManager;
 
     public ResidentialAethernet ResidentialAethernet;
+    public CustomAethernet CustomAethernet;
     internal FollowPath followPath = null;
     public Provider IPCProvider;
     public FollowPath FollowPath
@@ -118,7 +122,11 @@ public unsafe class Lifestream : IDalamudPlugin
                 /li island - 前往无人岛
                 """);
             DataStore = new();
-            ProperOnLogin.RegisterAvailable(() => DataStore.BuildWorlds());
+            ProperOnLogin.RegisterAvailable(() =>
+            {
+                DataStore.BuildWorlds();
+                Config.CharaMap[Player.CID] = Player.NameWithWorld;
+            });
             Svc.Framework.Update += Framework_Update;
             Memory = new();
             //EqualStrings.RegisterEquality("Guilde des aventuriers (Guildes des armuriers & forgeron...", "Guilde des aventuriers (Guildes des armuriers & forgerons/Maelstrom)");
@@ -126,6 +134,7 @@ public unsafe class Lifestream : IDalamudPlugin
             AutoRetainerApi = new();
             NotificationMasterApi = new(Svc.PluginInterface);
             ResidentialAethernet = new();
+            CustomAethernet = new();
             VnavmeshManager = new();
             SplatoonManager = new();
             IPCProvider = new();
@@ -189,7 +198,7 @@ public unsafe class Lifestream : IDalamudPlugin
         {
             TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.公寓);
         }
-        else if(arguments.EqualsIgnoreCaseAny("inn") || arguments.StartsWithAny(StringComparison.OrdinalIgnoreCase, "inn "))
+        else if(arguments.EqualsIgnoreCaseAny("inn", "hinn") || arguments.StartsWithAny(StringComparison.OrdinalIgnoreCase, "inn ", "hinn "))
         {
             var x = arguments.Split(" ");
             int? innNum = x.Length == 1 ? null : int.Parse(x[1]) - 1;
@@ -200,7 +209,7 @@ public unsafe class Lifestream : IDalamudPlugin
             }
             else
             {
-                TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, default, innNum);
+                TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆, innIndex: innNum, useSameWorld: !arguments.StartsWithAny("hinn"));
             }
         }
         else if(arguments.EqualsAny("gc", "gcc", "hc", "hcc", "fcgc", "gcfc") || arguments.StartsWithAny("gc ", "gcc ", "hc ", "hcc ", "fcgc ", "gcfc "))
@@ -442,7 +451,18 @@ public unsafe class Lifestream : IDalamudPlugin
         {
             ActiveAetheryte = null;
         }
-        P.ResidentialAethernet.Tick();
+        ResidentialAethernet.Tick();
+        CustomAethernet.Tick();
+        if(!Svc.ClientState.IsLoggedIn)
+        {
+            if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m) && m.IsAddonReady)
+            {
+                foreach(var chara in m.Characters)
+                {
+                    Config.CharaMap[chara.Entry->ContentId] = $"{chara.Name}@{ExcelWorldHelper.GetName(chara.HomeWorld)}";
+                }
+            }
+        }
     }
 
     public void Dispose()

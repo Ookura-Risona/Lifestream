@@ -1,6 +1,6 @@
 ﻿using Lumina.Excel.GeneratedSheets;
 
-namespace Lifestream.Systems;
+namespace Lifestream.Systems.Residential;
 public struct ResidentialAetheryte : IEquatable<ResidentialAetheryte>, IAetheryte
 {
     public Vector2 Position { get; set; }
