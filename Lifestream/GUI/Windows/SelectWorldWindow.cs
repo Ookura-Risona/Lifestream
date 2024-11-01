@@ -5,7 +5,7 @@ using ECommons.SimpleGui;
 namespace Lifestream.GUI.Windows;
 public class SelectWorldWindow : Window
 {
-    private SelectWorldWindow() : base("Lifestream: Select World", ImGuiWindowFlags.AlwaysAutoResize)
+    private SelectWorldWindow() : base("Lifestream: 选择服务器", ImGuiWindowFlags.AlwaysAutoResize)
     {
         EzConfigGui.WindowSystem.AddWindow(this);
     }
