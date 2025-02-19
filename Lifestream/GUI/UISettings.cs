@@ -1,7 +1,11 @@
 ﻿using ECommons.Configuration;
+using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lifestream.Data;
+using Lifestream.Enums;
 using Lifestream.Tasks.Shortcuts;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using NightmareUI;
 using NightmareUI.PrimaryUI;
 using Action = System.Action;
@@ -13,7 +17,7 @@ internal static unsafe class UISettings
     private static string AddNew = "";
     internal static void Draw()
     {
-        NuiTools.ButtonTabs([[new("常规", () => Wrapper(DrawGeneral)), new("悬浮窗", () => Wrapper(DrawOverlay)), new("专业", () => Wrapper(DrawExpert)), new("账号", () => Wrapper(UIServiceAccount.Draw))]]);
+        NuiTools.ButtonTabs([[new("常规", () => Wrapper(DrawGeneral)), new("悬浮窗", () => Wrapper(DrawOverlay))], [new("专业", () => Wrapper(DrawExpert)), new("账号", () => Wrapper(UIServiceAccount.Draw)), new("传送屏蔽", TabTravelBan.Draw)]]);
     }
 
     private static void Wrapper(Action action)
@@ -74,39 +78,53 @@ internal static unsafe class UISettings
                 }
                 ImGui.EndCombo();
             }
+            if(Player.CID != 0) {
+                ImGui.SetNextItemWidth(150f);
+                var pref = P.Config.PreferredSharedEstates.SafeSelect(Player.CID);
+                var name = pref switch
+                {
+                    (0, 0, 0) => "First available",
+                    (-1, 0, 0) => "Disable",
+                    _ => $"{ExcelTerritoryHelper.GetName((uint)pref.Territory)}, W{pref.Ward}, P{pref.Plot}"
+                };
+                if(ImGui.BeginCombo($"Preferred shared estate for {Player.NameWithWorld}", name))
+                {
+                    foreach(var x in Svc.AetheryteList.Where(x => x.IsSharedHouse))
+                    {
+                        if(ImGui.RadioButton("First available", pref == default))
+                        {
+                            P.Config.PreferredSharedEstates.Remove(Player.CID);
+                        }
+                        if(ImGui.RadioButton("Disable", pref == (-1,0,0)))
+                        {
+                            P.Config.PreferredSharedEstates[Player.CID] = (-1, 0, 0);
+                        }
+                        if(ImGui.RadioButton($"{ExcelTerritoryHelper.GetName(x.TerritoryId)}, Ward {x.Ward}, Plot {x.Plot}", pref == ((int)x.TerritoryId, x.Ward, x.Plot)))
+                        {
+                            P.Config.PreferredSharedEstates[Player.CID] = ((int)x.TerritoryId, x.Ward, x.Plot);
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+            }
             ImGui.Separator();
             ImGuiEx.Text("\"/li auto\" 命令优先级:");
+            ImGui.SameLine();
+            if(ImGui.SmallButton("Reset")) P.Config.PropertyPrio.Clear();
+            var dragDrop = Ref<ImGuiEx.RealtimeDragDrop<AutoPropertyData>>.Get(() => new("apddd", x => x.Type.ToString()));
+            P.Config.PropertyPrio.AddRange(Enum.GetValues<TaskPropertyShortcut.PropertyType>().Where(x => x != TaskPropertyShortcut.PropertyType.Auto && !P.Config.PropertyPrio.Any(s => s.Type == x)).Select(x => new AutoPropertyData(false, x)));
+            dragDrop.Begin();
             for(var i = 0; i < P.Config.PropertyPrio.Count; i++)
             {
                 var d = P.Config.PropertyPrio[i];
                 ImGui.PushID($"c{i}");
-                if(ImGui.ArrowButton("##up", ImGuiDir.Up) && i > 0)
-                {
-                    try
-                    {
-                        (P.Config.PropertyPrio[i - 1], P.Config.PropertyPrio[i]) = (P.Config.PropertyPrio[i], P.Config.PropertyPrio[i - 1]);
-                    }
-                    catch(Exception e)
-                    {
-                        e.Log();
-                    }
-                }
-                ImGui.SameLine();
-                if(ImGui.ArrowButton("##down", ImGuiDir.Down) && i < P.Config.PropertyPrio.Count - 1)
-                {
-                    try
-                    {
-                        (P.Config.PropertyPrio[i + 1], P.Config.PropertyPrio[i]) = (P.Config.PropertyPrio[i], P.Config.PropertyPrio[i + 1]);
-                    }
-                    catch(Exception e)
-                    {
-                        e.Log();
-                    }
-                }
+                dragDrop.NextRow();
+                dragDrop.DrawButtonDummy(d, P.Config.PropertyPrio, i);
                 ImGui.SameLine();
                 ImGui.Checkbox($"{d.Type}", ref d.Enabled);
                 ImGui.PopID();
             }
+            dragDrop.End();
             ImGui.Separator();
         })
 
@@ -144,11 +162,79 @@ internal static unsafe class UISettings
         })
 
         .Section("移动")
+        .Checkbox("自动移动时使用随机坐骑", () => ref P.Config.UseMount)
         .Checkbox("自动移动时使用 冲刺 和 速行", () => ref P.Config.UseSprintPeloton)
 
         .Section("角色选择菜单")
         .Checkbox("从角色选择菜单启用数据中心和服务器访问", () => ref P.Config.AllowDCTravelFromCharaSelect)
         .Checkbox("在访客数据中心上前往同一个服务器时使用跨服传送而不是数据中心访问", () => ref P.Config.UseGuestWorldTravel)
+
+        .Section("Wotsit Integration")
+        .Widget(() =>
+        {
+            var anyChanged = ImGui.Checkbox("Enable Wotsit Integration for teleporting to Aethernet destinations", ref P.Config.WotsitIntegrationEnabled);
+
+            if(P.Config.WotsitIntegrationEnabled)
+            {
+                ImGui.Indent();
+                if(ImGui.Checkbox("Include world select window", ref P.Config.WotsitIntegrationIncludes.WorldSelect))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include auto-teleport to property", ref P.Config.WotsitIntegrationIncludes.PropertyAuto))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to private estate", ref P.Config.WotsitIntegrationIncludes.PropertyPrivate))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to free company estate", ref P.Config.WotsitIntegrationIncludes.PropertyFreeCompany))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to apartment", ref P.Config.WotsitIntegrationIncludes.PropertyApartment))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to inn room", ref P.Config.WotsitIntegrationIncludes.PropertyInn))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to grand company", ref P.Config.WotsitIntegrationIncludes.GrandCompany))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to market board", ref P.Config.WotsitIntegrationIncludes.MarketBoard))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include teleport to island sanctuary", ref P.Config.WotsitIntegrationIncludes.IslandSanctuary))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include auto-teleport to aethernet destinations", ref P.Config.WotsitIntegrationIncludes.AetheryteAethernet))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include address book entries", ref P.Config.WotsitIntegrationIncludes.AddressBook))
+                {
+                    anyChanged = true;
+                }
+                if(ImGui.Checkbox("Include custom aliases", ref P.Config.WotsitIntegrationIncludes.CustomAlias))
+                {
+                    anyChanged = true;
+                }
+                ImGui.Unindent();
+            }
+
+            if(anyChanged)
+            {
+                PluginLog.Debug("Wotsit integration settings changed, re-initializing immediately");
+                S.WotsitManager.TryClearWotsit();
+                S.WotsitManager.MaybeTryInit(true);
+            }
+        })
 
         .Draw();
     }
@@ -199,6 +285,13 @@ internal static unsafe class UISettings
         .Checkbox("启用", () => ref P.Config.ShowInstanceSwitcher)
         .Checkbox("失败时重试", () => ref P.Config.InstanceSwitcherRepeat)
         .Checkbox("切换副本区前飞行时返回地面", () => ref P.Config.EnableFlydownInstance)
+        .Widget("在服务器信息栏显示副本区编号", (x) =>
+        {
+            if(ImGui.Checkbox(x, ref P.Config.EnableDtrBar))
+            {
+                S.DtrManager.Refresh();
+            }
+        })
         .SliderInt(150f, "额外按钮高度", () => ref P.Config.InstanceButtonHeight, 0, 50)
         .Widget("重置副本区数据", (x) =>
         {
@@ -295,7 +388,7 @@ internal static unsafe class UISettings
                 uint toRem = 0;
                 foreach(var x in P.Config.Hidden)
                 {
-                    ImGuiEx.Text($"{Svc.Data.GetExcelSheet<Aetheryte>().GetRow(x)?.AethernetName.Value?.Name.ToString() ?? x.ToString()}");
+                    ImGuiEx.Text($"{Svc.Data.GetExcelSheet<Aetheryte>().GetRowOrDefault(x)?.AethernetName.ValueNullable?.Name.ToString() ?? x.ToString()}");
                     ImGui.SameLine();
                     if(ImGui.SmallButton($"删除##{x}"))
                     {

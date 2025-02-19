@@ -3,7 +3,7 @@ using ECommons.Configuration;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.MathHelpers;
 using Lifestream.Data;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Path = System.IO.Path;
 
 namespace Lifestream.Systems.Residential;
@@ -44,7 +44,7 @@ public sealed class ResidentialAethernet : IDisposable
 
     public ResidentialAetheryte? ActiveAetheryte = null;
 
-    public bool IsInResidentialZone() => ZoneInfo.ContainsKey(Svc.ClientState.TerritoryType);
+    public bool IsInResidentialZone() => ZoneInfo.ContainsKey(P.Territory);
 
     public ResidentialAethernet()
     {
@@ -53,7 +53,7 @@ public sealed class ResidentialAethernet : IDisposable
             HousingData = EzConfig.LoadConfiguration<HousingData>(Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName, FileName), false);
             foreach(var zone in ZoneInfo)
             {
-                var values = Svc.Data.GetExcelSheet<HousingAethernet>().Where(a => a.TerritoryType.Row == zone.Key).OrderBy(x => x.Order);
+                var values = Svc.Data.GetExcelSheet<HousingAethernet>().Where(a => a.TerritoryType.RowId == zone.Key).OrderBy(x => x.Order);
                 foreach(var a in values)
                 {
                     var aetheryte = new ResidentialAetheryte(a, a.Order >= values.Count() / 2, zone.Value.SubdivisionModifier);
@@ -74,7 +74,7 @@ public sealed class ResidentialAethernet : IDisposable
 
     public void Tick()
     {
-        if(Svc.ClientState.LocalPlayer != null && ZoneInfo.ContainsKey(Svc.ClientState.TerritoryType))
+        if(Svc.ClientState.LocalPlayer != null && ZoneInfo.ContainsKey(P.Territory))
         {
             UpdateActiveAetheryte();
         }
@@ -109,7 +109,7 @@ public sealed class ResidentialAethernet : IDisposable
     {
         if(obj == null) return null;
         var pos2 = obj.Position.ToVector2();
-        if(ZoneInfo.TryGetValue(Svc.ClientState.TerritoryType, out var result))
+        if(ZoneInfo.TryGetValue(P.Territory, out var result))
         {
             foreach(var l in result.Aetherytes)
             {

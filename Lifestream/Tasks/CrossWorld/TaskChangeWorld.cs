@@ -10,7 +10,7 @@ internal static unsafe class TaskChangeWorld
     {
         try
         {
-            Utils.AssertCanTravel(Player.Name, Player.Object.HomeWorld.Id, Player.Object.CurrentWorld.Id, world);
+            Utils.AssertCanTravel(Player.Name, Player.Object.HomeWorld.RowId, Player.Object.CurrentWorld.RowId, world);
         }
         catch(Exception e) { e.Log(); return; }
         if(P.Config.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
@@ -61,7 +61,7 @@ internal static unsafe class TaskChangeWorld
                 WorldVisitRand = Random.Shared.Next(0, P.Config.RetryWorldVisitIntervalDelta * 1000);
                 P.TaskManager.BeginStack();
                 TaskChangeWorld.Enqueue(targetWorld);
-                P.TaskManager.EnqueueStack();
+                P.TaskManager.InsertStack();
                 return true;
             }
         }

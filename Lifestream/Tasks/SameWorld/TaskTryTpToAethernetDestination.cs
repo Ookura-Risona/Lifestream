@@ -14,7 +14,7 @@ internal static class TaskTryTpToAethernetDestination
         }
         else if(P.CustomAethernet.ActiveAetheryte != null)
         {
-            foreach(var x in P.CustomAethernet.ZoneInfo[Svc.ClientState.TerritoryType])
+            foreach(var x in P.CustomAethernet.ZoneInfo[P.Territory])
             {
                 if(x.Name.Contains(targetName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -42,7 +42,7 @@ internal static class TaskTryTpToAethernetDestination
                 {
                     P.TaskManager.InsertMulti(
                         new FrameDelayTask(10),
-                        new(WorldChange.TargetReachableAetheryte),
+                        new(WorldChange.TargetReachableWorldChangeAetheryte),
                         new(WorldChange.LockOn),
                         new(WorldChange.EnableAutomove),
                         new(WorldChange.WaitUntilMasterAetheryteExists),

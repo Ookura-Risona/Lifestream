@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Aetherytes;
+using Dalamud.Game.ClientState.Objects.Enums;
 using ECommons.ExcelServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.GameFunctions;
@@ -11,7 +12,7 @@ using Lifestream.Data;
 using Lifestream.Schedulers;
 using Lifestream.Tasks.SameWorld;
 using Lifestream.Tasks.Utility;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace Lifestream.Tasks.Shortcuts;
 public static unsafe class TaskPropertyShortcut
@@ -80,6 +81,19 @@ public static unsafe class TaskPropertyShortcut
                     DuoLog.Error("Could not find free company house");
                 }
             }
+            else if(propertyType == PropertyType.Shared_Estate)
+            {
+                var e = GetSharedHouseAetheryteId(out var entry);
+                if(e.ID != 0)
+                {
+                    var data = Utils.GetCustomPathData(Utils.GetResidentialAetheryteByTerritoryType(entry.TerritoryId).Value, entry.Ward-1, entry.Plot-1);
+                    ExecuteTpAndPathfind(e.ID, e.Sub, data, mode);
+                }
+                else
+                {
+                    DuoLog.Error("Could not find shared estate");
+                }
+            }
             else if(propertyType == PropertyType.公寓)
             {
                 if(GetApartmentAetheryteID().ID != 0)
@@ -115,6 +129,13 @@ public static unsafe class TaskPropertyShortcut
             EnqueueGoToMyApartment(enterApartment);
             return true;
         }
+        else if(type == PropertyType.Shared_Estate && GetSharedHouseAetheryteId(out var sharedAetheryte).ID != 0)
+        {
+            var s = GetSharedHouseAetheryteId(out var entry);
+            var data = Utils.GetCustomPathData(Utils.GetResidentialAetheryteByTerritoryType(entry.TerritoryId).Value, entry.Ward-1, entry.Plot-1);
+            ExecuteTpAndPathfind(s.ID, s.Sub, data, mode);
+            return true;
+        }
         else if(type == PropertyType.旅馆)
         {
             EnqueueGoToInn(innIndex);
@@ -122,13 +143,14 @@ public static unsafe class TaskPropertyShortcut
         }
         return false;
     }
+    private static void ExecuteTpAndPathfind(uint id, HousePathData data, HouseEnterMode? mode = null) => ExecuteTpAndPathfind(id, 0, data, mode);
 
-    private static void ExecuteTpAndPathfind(uint id, HousePathData data, HouseEnterMode? mode = null)
+    private static void ExecuteTpAndPathfind(uint id, uint subIndex, HousePathData data, HouseEnterMode? mode = null)
     {
         mode ??= data?.GetHouseEnterMode() ?? HouseEnterMode.无;
         PluginLog.Information($"id={id}, data={data}, mode={mode}, cnt={data?.PathToEntrance.Count}");
         P.TaskManager.BeginStack();
-        P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(id));
+        P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(id, subIndex));
         P.TaskManager.Enqueue(() => !IsScreenReady());
         P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
         if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.走到门口, HouseEnterMode.进入房屋))
@@ -182,20 +204,20 @@ public static unsafe class TaskPropertyShortcut
             var id = innIndex == null ? GetInnTerritoryId() : InnData.Keys.ElementAt(innIndex.Value);
             PluginLog.Debug($"Inn territory: {ExcelTerritoryHelper.GetName(id)}");
             var data = InnData[id];
-            var aetheryte = Svc.Data.GetExcelSheet<Aetheryte>().First(x => x.IsAetheryte && x.Territory.Row == id);
-            if((P.ActiveAetheryte == null || P.ActiveAetheryte.Value.ID != aetheryte.RowId) && (Utils.GetReachableMasterAetheryte() == null || id != Player.Territory))
+            var aetheryte = Svc.Data.GetExcelSheet<Aetheryte>().First(x => x.IsAetheryte && x.Territory.RowId == id);
+            if((P.ActiveAetheryte == null || P.ActiveAetheryte.Value.ID != aetheryte.RowId) && (Utils.GetReachableMasterAetheryte() == null || id != P.Territory))
             {
                 P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(aetheryte.RowId, 0));
                 P.TaskManager.Enqueue(() => !IsScreenReady());
                 P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
             }
             TaskApproachAetheryteIfNeeded.Enqueue();
-            var aethernetDest = Svc.Data.GetExcelSheet<Aetheryte>().GetRow(data.Aethernet).AethernetName.Value.Name.ExtractText();
+            var aethernetDest = Svc.Data.GetExcelSheet<Aetheryte>().GetRow(data.Aethernet).AethernetName.Value.Name.GetText();
             PluginLog.Debug($"Inn aethernet destination: {aethernetDest} at {aetheryte.AethernetName.Value.Name}");
             TaskTryTpToAethernetDestination.Enqueue(aethernetDest);
             P.TaskManager.Enqueue(() => !IsScreenReady());
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
-            P.TaskManager.Enqueue(TaskMoveToHouse.UseSprint);
+            P.TaskManager.Enqueue(() => TaskMoveToHouse.UseSprint(false));
             P.TaskManager.Enqueue(() => P.FollowPath.Move([.. data.Path], true));
             P.TaskManager.Enqueue(() => P.FollowPath.Waypoints.Count == 0);
             P.TaskManager.Enqueue(() =>
@@ -275,6 +297,30 @@ public static unsafe class TaskPropertyShortcut
         P.TaskManager.InsertStack();
     }
 
+    public static (uint ID, uint Sub) GetSharedHouseAetheryteId(out IAetheryteEntry entry)
+    {
+        entry = default;
+        var pref = P.Config.PreferredSharedEstates.SafeSelect(Player.CID);
+        if(pref == (-1, 0, 0)) return default;
+        foreach(var x in Svc.AetheryteList)
+        {
+            if(x.IsSharedHouse && x.AetheryteId.EqualsAny<uint>(59, 60, 61, 97, 165) && pref == ((int)x.TerritoryId, x.Ward, x.Plot))
+            {
+                entry = x;
+                return (x.AetheryteId, x.SubIndex);
+            }
+        }
+        foreach(var x in Svc.AetheryteList)
+        {
+            if(x.IsSharedHouse && x.AetheryteId.EqualsAny<uint>(59, 60, 61, 97, 165))
+            {
+                entry = x;
+                return (x.AetheryteId, x.SubIndex);
+            }
+        }
+        return (0,0);
+    }
+
     public static uint GetPrivateHouseAetheryteID()
     {
         foreach(var x in Svc.AetheryteList)
@@ -329,10 +375,10 @@ public static unsafe class TaskPropertyShortcut
     {
         if(P.Config.PreferredInn != 0)
         {
-            var aetheryte = Svc.Data.GetExcelSheet<Aetheryte>().FirstOrDefault(x => x.IsAetheryte && x.Territory.Row == P.Config.PreferredInn);
-            if(aetheryte != null && Svc.AetheryteList.Any(a => a.AetheryteId == aetheryte.RowId))
+            var aetheryte = Svc.Data.GetExcelSheet<Aetheryte>().FirstOrNull(x => x.IsAetheryte && x.Territory.RowId == P.Config.PreferredInn);
+            if(aetheryte != null && Svc.AetheryteList.Any(a => a.AetheryteId == aetheryte?.RowId))
             {
-                return aetheryte.Territory.Row;
+                return aetheryte.Value.Territory.RowId;
             }
         }
         return P.Config.WorldChangeAetheryte.GetTerritory();
@@ -340,6 +386,6 @@ public static unsafe class TaskPropertyShortcut
 
     public enum PropertyType
     {
-        自动, 个人房屋, 部队房屋, 公寓, 旅馆
+        自动, 个人房屋, 部队房屋, 公寓, 旅馆, 共享房屋
     }
 }

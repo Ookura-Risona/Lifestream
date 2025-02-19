@@ -2,9 +2,10 @@
 using ECommons.GameHelpers;
 using ECommons.MathHelpers;
 using ECommons.SplatoonAPI;
+using FFXIVClientStructs;
 using Lifestream.Data;
 using NightmareUI.ImGuiElements;
-using Aetheryte = Lumina.Excel.GeneratedSheets.Aetheryte;
+using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
 
 namespace Lifestream.GUI;
 public static class TabCustomAlias
@@ -118,7 +119,7 @@ public static class TabCustomAlias
         {
             Copy(EzConfig.DefaultSerializationFactory.Serialize(command, false));
         }
-        var aetherytes = Ref<uint[]>.Get("Aetherytes", () => Svc.Data.GetExcelSheet<Aetheryte>().Where(x => x.PlaceName.Value?.Name?.ToString().IsNullOrEmpty() == false && x.IsAetheryte).Select(x => x.RowId).ToArray());
+        var aetherytes = Ref<uint[]>.Get("Aetherytes", () => Svc.Data.GetExcelSheet<Aetheryte>().Where(x => x.PlaceName.ValueNullable?.Name.ToString().IsNullOrEmpty() == false && x.IsAetheryte).Select(x => x.RowId).ToArray());
         var aetherytePlaceNames = Ref<Dictionary<uint, string>>.Get("Aetherytes", () => aetherytes.Select(Svc.Data.GetExcelSheet<Aetheryte>().GetRow).ToDictionary(x => x.RowId, x => x.PlaceName.Value.Name.ToString()));
 
         var aethernet = Ref<uint[]>.Get("Aethernet", () => Utils.GetAllRegisteredAethernetDestinations().ToArray());
@@ -143,6 +144,13 @@ public static class TabCustomAlias
         if(command.Kind.EqualsAny(CustomAliasKind.步行到坐标, CustomAliasKind.寻路到坐标))
         {
             Utils.DrawVector3Selector("走路到坐标", ref command.Point);
+        }
+
+        if(command.Kind.EqualsAny(CustomAliasKind.Navmesh_to_point))
+        {
+            ImGui.SameLine();
+            ImGuiEx.ButtonCheckbox(FontAwesomeIcon.FastForward, ref command.UseTA, EColor.Green);
+            ImGuiEx.Tooltip("使用 TextAdvance 进行移动");
         }
 
         if(command.Kind == CustomAliasKind.跨服)
@@ -228,6 +236,16 @@ public static class TabCustomAlias
                 }
 
                 ImGui.EndTable();
+            }
+        }
+        if(command.Kind == CustomAliasKind.Interact)
+        {
+            ImGui.SetNextItemWidth(150f);
+            ImGuiEx.InputUint("Data ID", ref command.DataID);
+            ImGui.SameLine();
+            if(ImGuiEx.Button("Target", Svc.Targets.Target?.DataId != 0))
+            {
+                command.DataID = Svc.Targets.Target.DataId;
             }
         }
         ImGui.PopID();

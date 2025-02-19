@@ -1,7 +1,9 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
+using ECommons.Automation.UIInput;
 using ECommons.EzHookManager;
+using ECommons.GameHelpers;
 using ECommons.MathHelpers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -20,14 +22,14 @@ internal unsafe class Memory : IDisposable
     private bool IsLeftMouseHeld = false;
 
     internal delegate void AddonDKTWorldList_ReceiveEventDelegate(nint a1, short a2, nint a3, AtkEvent* a4, InputData* a5);
-    [Signature("40 53 48 83 EC 20 F6 81 ?? ?? ?? ?? ?? 49 8B D9 41 8B C0", DetourName = nameof(AddonDKTWorldList_ReceiveEventDetour))]
+    [Signature("48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 ?? F6 81", DetourName = nameof(AddonDKTWorldList_ReceiveEventDetour), Fallibility = Fallibility.Fallible)]
     internal Hook<AddonDKTWorldList_ReceiveEventDelegate> AddonDKTWorldList_ReceiveEventHook;
 
     internal delegate void AtkComponentTreeList_vf31(nint a1, uint a2, byte a3);
-    [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20 8B DA 41 0F B6 F0", DetourName = nameof(AtkComponentTreeList_vf31Detour))]
+    [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20 8B DA 41 0F B6 F0", DetourName = nameof(AtkComponentTreeList_vf31Detour), Fallibility = Fallibility.Fallible)]
     internal Hook<AtkComponentTreeList_vf31> AtkComponentTreeList_vf31Hook;
 
-    [Signature("4C 8D 0D ?? ?? ?? ?? 4C 8B 11 48 8B D9", ScanType = ScanType.StaticAddress)]
+    [Signature("4C 8D 0D ?? ?? ?? ?? 4C 8B 11 48 8B D9", ScanType = ScanType.StaticAddress, Fallibility = Fallibility.Fallible)]
     internal int* MaxInstances;
 
     internal delegate byte OpenPartyFinderInfoDelegate(void* agentLfg, ulong contentId);
@@ -49,7 +51,7 @@ internal unsafe class Memory : IDisposable
     private void AddonDKTWorldList_ReceiveEventDetour(nint a1, short a2, nint a3, AtkEvent* a4, InputData* a5)
     {
         PluginLog.Debug($"AddonDKTWorldCheck_ReceiveEventDetour: {a1:X16}, {a2}, {a3:X16}, {(nint)a4:X16}, {(nint)a5:X16}");
-        PluginLog.Debug($"  Event: {(nint)a4->Node:X16}, {(nint)a4->Target:X16}, {(nint)a4->Listener:X16}, {a4->Param}, {(nint)a4->NextEvent:X16}, {a4->Type}, {a4->Unk29}, {a4->Flags}");
+        PluginLog.Debug($"  Event: {(nint)a4->Node:X16}, {(nint)a4->Target:X16}, {(nint)a4->Listener:X16}, {a4->Param}, {(nint)a4->NextEvent:X16}, {a4->State.EventType}, {a4->State.UnkFlags1}, {a4->State.StateFlags}");
         PluginLog.Debug($"  Data: {(nint)a5->unk_8:X16}({*a5->unk_8:X16}/{*a5->unk_8:X16}), [{a5->unk_8s->unk_4}/{a5->unk_8s->SelectedItem}] {a5->unk_16}, {a5->unk_24} | "); //{a5->RawDumpSpan.ToArray().Print()}
         //var span = new Span<byte>((void*)*a5->unk_8, 0x40).ToArray().Select(x => $"{x:X2}");
         //PluginLog.Debug($"  Data 2, {a5->unk_8s->unk_4}, {MemoryHelper.ReadRaw((nint)a5->unk_8s->CategorySelection, 4).Print(",")},  :{string.Join(" ", span)}");
@@ -68,9 +70,13 @@ internal unsafe class Memory : IDisposable
                 Listener = &addon->UldManager.NodeList[nodeIndex]->GetAsAtkComponentNode()->Component->AtkEventListener,
                 Param = 1,
                 NextEvent = null,
-                Type = AtkEventType.ListItemToggle,
-                Unk29 = 0,
-                Flags = 0,
+                State = new()
+                {
+                    EventType = AtkEventType.ListItemToggle,
+                    UnkFlags1 = 0,
+                    StateFlags = 0,
+                    UnkFlags3 = 0,
+                }
             }
         };
         var Unk = stackalloc UnknownStruct[1]
@@ -125,7 +131,7 @@ internal unsafe class Memory : IDisposable
                         if(TryGetAddonByName<AtkUnitBase>("Tooltip", out var addon) && IsAddonReady(addon) && addon->IsVisible)
                         {
                             var node = addon->UldManager.NodeList[2]->GetAsAtkTextNode();
-                            var text = MemoryHelper.ReadSeString(&node->NodeText).ExtractText();
+                            var text = GenericHelpers.ReadSeString(&node->NodeText).GetText();
                             if(P.ActiveAetheryte != null)
                             {
                                 var master = Utils.GetMaster();
@@ -140,7 +146,7 @@ internal unsafe class Memory : IDisposable
                             }
                             if(P.ResidentialAethernet.ActiveAetheryte != null)
                             {
-                                var zone = P.ResidentialAethernet.ZoneInfo.SafeSelect(Svc.ClientState.TerritoryType);
+                                var zone = P.ResidentialAethernet.ZoneInfo.SafeSelect(P.Territory);
                                 if(zone != null)
                                 {
                                     foreach(var x in zone.Aetherytes)
@@ -155,7 +161,7 @@ internal unsafe class Memory : IDisposable
                             }
                             if(P.CustomAethernet.ActiveAetheryte != null)
                             {
-                                var zone = P.CustomAethernet.ZoneInfo.SafeSelect(Svc.ClientState.TerritoryType);
+                                var zone = P.CustomAethernet.ZoneInfo.SafeSelect(P.Territory);
                                 if(zone != null)
                                 {
                                     foreach(var x in zone)

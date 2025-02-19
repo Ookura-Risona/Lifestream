@@ -22,7 +22,7 @@ using Lifestream.Systems.Legacy;
 using Lifestream.Tasks;
 using Lifestream.Tasks.CrossDC;
 using Lifestream.Tasks.Utility;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using NightmareUI.ImGuiElements;
 using Path = System.IO.Path;
@@ -141,7 +141,7 @@ internal static unsafe class UIDebug
                 }
             }
         }
-        if(data.TryGetValue(Svc.ClientState.TerritoryType, out var plots))
+        if(data.TryGetValue(P.Territory, out var plots))
         {
             if(ImGui.CollapsingHeader("Control"))
             {
@@ -215,7 +215,7 @@ internal static unsafe class UIDebug
                 entries.Add(
                     new("Num", () => ImGuiEx.Text($"{index + 1}")),
                     new("Front", () => ImGuiEx.Text($"{plot.Front}")),
-                    new("Aethernet", () => ImGuiEx.Text($"{Svc.Data.GetExcelSheet<HousingAethernet>().GetRow(plot.AethernetID)?.PlaceName?.Value?.Name ?? plot.AethernetID.ToString()}")),
+                    new("Aethernet", () => ImGuiEx.Text($"{Svc.Data.GetExcelSheet<HousingAethernet>().GetRowOrDefault(plot.AethernetID)?.PlaceName.ValueNullable?.Name ?? plot.AethernetID.ToString()}")),
                     new("Edit", () =>
                     {
                         if(ImGui.Button($"Edit{index + 1}"))
@@ -283,9 +283,9 @@ internal static unsafe class UIDebug
         }
         else
         {
-            if(ImGui.Button($"Create data for {ExcelTerritoryHelper.GetName(Svc.ClientState.TerritoryType)}"))
+            if(ImGui.Button($"Create data for {ExcelTerritoryHelper.GetName(P.Territory)}"))
             {
-                data[Svc.ClientState.TerritoryType] = [];
+                data[P.Territory] = [];
             }
         }
     }
@@ -338,6 +338,64 @@ internal static unsafe class UIDebug
 
     private static void Debug()
     {
+        if(ImGui.CollapsingHeader("ReaderLobbyDKTWorldList"))
+        {
+            if(TryGetAddonByName<AtkUnitBase>("LobbyDKTWorldList", out var addon) && IsAddonReady(addon))
+            {
+                var r = new ReaderLobbyDKTWorldList(addon);
+                ImGuiEx.Text($"""
+                    Source {r.Source}
+                    Destination {r.Destination}
+                    SelectedDataCenter {r.SelectedDataCenter}
+                    """);
+                ImGuiEx.Text($"Regions:");
+                ImGui.Indent();
+                foreach(var region in r.Regions)
+                {
+                    ImGuiEx.Text($"""
+                        {region.RegionTitle}
+                        """);
+                    ImGuiEx.Text("DataCenters");
+                    foreach(var dc in region.DataCenters)
+                    {
+                        ImGui.Indent();
+                        ImGuiEx.Text($"""
+                            {dc.Name}
+                            """);
+                        ImGui.Unindent();
+                    }
+                }
+                ImGui.Separator();
+                ImGuiEx.Text($"Worlds: {r.GetNumWorlds()}");
+                ImGui.Indent();
+                foreach(var x in r.Worlds)
+                {
+                    ImGuiEx.Text($"{x.WorldName}, active={x.IsAvailable}");
+                }
+                ImGui.Unindent();
+                ImGui.Unindent();
+            }
+        }
+        if(ImGui.CollapsingHeader("Context"))
+        {
+            if(TryGetAddonMaster<AddonMaster.ContextMenu>(out var m))
+            {
+                foreach(var e in m.Entries)
+                {
+                    ImGuiEx.Text($"{e.Text} / {e.Enabled}");
+                }
+            }
+        }
+        if(ImGui.CollapsingHeader("CharaSelect"))
+        {
+            if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m))
+            {
+                foreach(var x in m.Characters)
+                {
+                    ImGuiEx.Text($"{x.Name}/{x.CurrentWorld}/{x.HomeWorld}/{x.IsSelected}");
+                }
+            }
+        }
         if(ImGui.CollapsingHeader("Custom aethernet"))
         {
             if(ImGui.Button("Copy target") && Svc.Targets.Target != null)
@@ -345,7 +403,7 @@ internal static unsafe class UIDebug
                 var pname = TerritoryInfo.Instance()->AreaPlaceNameId;
                 var pname2 = TerritoryInfo.Instance()->SubAreaPlaceNameId;
                 Copy($"""
-                    new(new({Svc.Targets.Target.Position.X:F1}f, {Svc.Targets.Target.Position.Z:F1}f), {Svc.ClientState.TerritoryType}, GetPlaceName({pname}), Base), //{Svc.Data.GetExcelSheet<PlaceName>().GetRow(pname)?.Name?.ExtractText()} ({pname}), {Svc.Data.GetExcelSheet<PlaceName>().GetRow(pname2)?.Name?.ExtractText()} ({pname2}), 
+                    new(new({Svc.Targets.Target.Position.X:F1}f, {Svc.Targets.Target.Position.Z:F1}f), {P.Territory}, GetPlaceName({pname}), Base), //{Svc.Data.GetExcelSheet<PlaceName>().GetRowOrDefault(pname)?.Name.GetText()} ({pname}), {Svc.Data.GetExcelSheet<PlaceName>().GetRowOrDefault(pname2)?.Name.GetText()} ({pname2}), 
                     """);
             }
             ImGuiEx.Text($"Active: {P.CustomAethernet.ActiveAetheryte}");
@@ -440,9 +498,8 @@ internal static unsafe class UIDebug
                 if(x.Value == null) continue;
                 ImGuiEx.Text($"{x.Value->NameString}");
             }
+            { if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m)) ImGuiEx.Text($"Selected chara: {m.Characters.FirstOrDefault(x => x.IsSelected)?.Name}"); }
         }
-        { ImGuiEx.Text($"Addon highest focus: {TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m) && m.IsAddonFocused}"); }
-        { if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m)) ImGuiEx.Text($"Selected chara: {m.Characters.FirstOrDefault(x => x.IsSelected).Name}"); }
         ImGui.Checkbox("DisableHousePathData", ref P.DisableHousePathData);
         if(ImGui.CollapsingHeader("HUD"))
         {
@@ -460,13 +517,13 @@ internal static unsafe class UIDebug
             }
         }
         var data = Svc.Data.GetExcelSheet<Addon>().GetRow(195);
-        var text = data.Text.ExtractText();
+        var text = data.Text.GetText();
         if(ImGui.Button("Lumina"))
         {
-            foreach(var x in data.Text.Payloads)
+            /*foreach(var x in data.Text.Payloads)
             {
                 PluginLog.Information($"Payload {x.PayloadType}, text: {x.ToString()}");
-            }
+            }*/
         }
         if(ImGui.Button("Dalamud"))
         {
@@ -658,6 +715,7 @@ internal static unsafe class UIDebug
         }
         if(ImGui.CollapsingHeader("DCV"))
         {
+            if(ImGui.Button("Unlock all worlds")) UnlockAllWorlds();
             if(ImGui.Button("Enable AtkComponentTreeList_vf31Hook hook"))
             {
                 P.Memory.AtkComponentTreeList_vf31Hook.Enable();
@@ -684,7 +742,7 @@ internal static unsafe class UIDebug
             ImGui.SameLine();
             ImGui.InputText($"w name", ref str3, 100);
             if(ImGui.Button($"{nameof(DCChange.ConfirmDcVisit)}")) PluginLog.Information($"{DCChange.ConfirmDcVisit()}");
-            if(ImGui.Button($"{nameof(DCChange.ConfirmDcVisit2)}")) PluginLog.Information($"{DCChange.ConfirmDcVisit2()}");
+            if(ImGui.Button($"{nameof(DCChange.ConfirmDcVisit2)}")) PluginLog.Information($"{DCChange.ConfirmDcVisit2(default, default, default)}");
             if(ImGui.Button($"{nameof(DCChange.SelectOk)}")) PluginLog.Information($"{DCChange.SelectOk()}");
             if(ImGui.Button($"{nameof(DCChange.ConfirmDcVisitIntention)}")) PluginLog.Information($"{DCChange.ConfirmDcVisitIntention()}");
             if(ImGui.Button($"{nameof(DCChange.SelectYesLogin)}")) PluginLog.Information($"{DCChange.SelectYesLogin()}");
@@ -707,6 +765,23 @@ internal static unsafe class UIDebug
         {
             ImGuiEx.Text($"v.dist: {Svc.Targets.Target.Position.Y - Player.Object.Position.Y}");
             ImGuiEx.Text($"DTT3D: {Vector3.Distance(Svc.Targets.Target.Position, Player.Object.Position)}");
+        }
+    }
+
+    private static void UnlockAllWorlds()
+    {
+        if(TryGetAddonByName<AtkUnitBase>("LobbyDKTWorldList", out var addon) && IsAddonReady(addon))
+        {
+            var list = addon->UldManager.NodeList[6]->GetAsAtkComponentNode();
+            for(var i = 3; i < 3 + 8; i++)
+            {
+                addon->AtkValues[160 + (i - 3) * 8].Int = 0;
+                var t = list->Component->UldManager.NodeList[i]->GetAsAtkComponentNode()->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
+                if(t->Alpha_2 != 255)
+                {
+                    t->Alpha_2 = 255;
+                }
+            }
         }
     }
 

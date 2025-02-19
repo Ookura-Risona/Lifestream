@@ -1,18 +1,22 @@
-
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.Gui.Dtr;
 using Dalamud.Memory;
 using ECommons.Automation;
 using ECommons.ChatMethods;
 using ECommons.Configuration;
 using ECommons.ExcelServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
+using ECommons.EzEventManager;
 using ECommons.GameHelpers;
 using ECommons.Interop;
 using ECommons.MathHelpers;
+using ECommons.Reflection;
+using ECommons.SimpleGui;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -22,7 +26,7 @@ using Lifestream.GUI;
 using Lifestream.Systems.Legacy;
 using Lifestream.Systems.Residential;
 using Lifestream.Tasks.CrossDC;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using NightmareUI;
 using PInvoke;
 using System.Collections.Specialized;
@@ -35,6 +39,71 @@ namespace Lifestream;
 
 internal static unsafe class Utils
 {
+    public static string GetWorldFromCID(ulong cid)
+    {
+        return Utils.GetCharaName(cid)?.Split("@").SafeSelect(1);
+    }
+
+    public static bool IsInsideHouse()
+    {
+        return P.Territory.EqualsAny<uint>(
+            Houses.Private_Cottage_Mist, Houses.Private_House_Mist, Houses.Private_Mansion_Mist,
+            Houses.Private_Cottage_Empyreum, Houses.Private_House_Empyreum, Houses.Private_Mansion_Empyreum,
+            Houses.Private_Cottage_Shirogane, Houses.Private_House_Shirogane, Houses.Private_Mansion_Shirogane,
+            Houses.Private_Cottage_The_Goblet, Houses.Private_House_The_Goblet, Houses.Private_Mansion_The_Goblet,
+            Houses.Private_Cottage_The_Lavender_Beds, Houses.Private_House_The_Lavender_Beds, Houses.Private_Mansion_The_Lavender_Beds,
+            1249, 1250, 1251
+            );
+    }
+
+    public static bool IsInsideWorkshop()
+    {
+        return P.Territory.EqualsAny(Houses.Company_Workshop_Empyreum, Houses.Company_Workshop_Mist, Houses.Company_Workshop_Shirogane, Houses.Company_Workshop_The_Goblet, Houses.Company_Workshop_The_Lavender_Beds);
+    }
+
+    public static bool IsInsidePrivateChambers()
+    {
+        return P.Territory.EqualsAny(Houses.Private_Chambers_Empyreum, Houses.Private_Chambers_Mist, Houses.Private_Chambers_Shirogane, Houses.Private_Chambers_The_Goblet, Houses.Private_Chambers_The_Lavender_Beds);
+    }
+
+    public static bool IsTerritoryResidentialDistrict(ushort obj)
+    {
+        return obj.EqualsAny(ResidentalAreas.Mist, ResidentalAreas.Shirogane, ResidentalAreas.Empyreum, ResidentalAreas.The_Goblet, ResidentalAreas.The_Lavender_Beds);
+    }
+
+    public static void EnsureEnhancedLoginIsOff()
+    {
+        /*try
+        {
+            if(Svc.PluginInterface.InstalledPlugins.Any(x => x.InternalName == "HaselTweaks" && x.IsLoaded))
+            {
+                if(DalamudReflector.TryGetDalamudPlugin("HaselTweaks", out var instance, out var context, false, true))
+                {
+                    var configWindow = ReflectionHelper.CallStatic(context.Assemblies, "HaselCommon.Service", [], "Get", ["HaselTweaks.Windows.PluginWindow"], []);
+                    var tweaks = (System.Collections.IEnumerable)configWindow.GetFoP("Tweaks");
+                    foreach(var x in tweaks)
+                    {
+                        if(x.GetFoP<string>("InternalName") == "EnhancedLoginLogout" && x.GetFoP<int>("Status") == 5)
+                        {
+                            configWindow.GetFoP("TweakManager").Call("UserDisableTweak", [x], true);
+                            new PopupWindow(() =>
+                            {
+                                ImGuiEx.Text($"""
+                                    Enhanced Login/Logout from HaselTweaks plugin has been detected.
+                                    It is not compatible with Lifestream and has been disabled.
+                                    """);
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            e.Log();
+        }*/
+    }
+
     public static string GetCharaName(ulong cid)
     {
         if(P.Config.CharaMap.TryGetValue(cid, out var name)) return name;
@@ -95,9 +164,9 @@ internal static unsafe class Utils
         // 3 = going up
         // 4 = stopped
         // 5 = going down
-        var isJumping = *(byte*)(p.Address + 736) > 0;
+        var isJumping = *(byte*)(p.Address + 496 + 208) > 0;
         // 1 iff dismounting and haven't hit the ground yet
-        var isAirDismount = **(byte**)(p.Address + 1432) == 1;
+        var isAirDismount = **(byte**)(p.Address + 496 + 904) == 1;
 
         return isJumping || isAirDismount;
     }
@@ -115,11 +184,11 @@ internal static unsafe class Utils
             foreach(var d in dc)
             {
                 var worlds = ExcelWorldHelper.GetPublicWorlds(d.RowId);
-                ImGuiEx.CollectionCheckbox(d.Name, worlds.Select(x => (int)x.RowId), worldList);
+                ImGuiEx.CollectionCheckbox(d.Name.ToString(), worlds.Select(x => (int)x.RowId), worldList);
                 ImGui.Indent();
                 foreach(var w in worlds.OrderBy(x => x.Name.ToString()))
                 {
-                    ImGuiEx.CollectionCheckbox(w.Name, (int)w.RowId, worldList);
+                    ImGuiEx.CollectionCheckbox(w.Name.ToString(), (int)w.RowId, worldList);
                 }
                 ImGui.Unindent();
             }
@@ -130,7 +199,7 @@ internal static unsafe class Utils
 
     public static bool IsTravelBlocked(string charaName, Number charaWorld, Number sourceWorld, string targetWorld)
     {
-        return IsTravelBlocked(charaName, charaWorld, sourceWorld, ExcelWorldHelper.Get(targetWorld).RowId);
+        return IsTravelBlocked(charaName, charaWorld, sourceWorld, ExcelWorldHelper.Get(targetWorld).Value.RowId);
     }
 
     public static bool IsTravelBlocked(string charaName, Number charaWorld, Number sourceWorld, Number targetWorld)
@@ -150,7 +219,7 @@ internal static unsafe class Utils
 
     public static void AssertCanTravel(string charaName, Number charaWorld, Number sourceWorld, string targetWorld)
     {
-        AssertCanTravel(charaName, charaWorld, sourceWorld, ExcelWorldHelper.Get(targetWorld).RowId);
+        AssertCanTravel(charaName, charaWorld, sourceWorld, ExcelWorldHelper.Get(targetWorld).Value.RowId);
     }
 
     public static void AssertCanTravel(string charaName, Number charaWorld, Number sourceWorld, Number targetWorld)
@@ -269,6 +338,14 @@ internal static unsafe class Utils
         }
         ScreenToWorldSelector(id, ref value);
         ImGuiEx.Tooltip("Select with mouse");
+        ImGui.SameLine();
+        if(ImGuiEx.IconButton(FontAwesomeIcon.Flag, $"flag{id}", enabled: Player.Interactable && AgentMap.Instance()->IsFlagMarkerSet == 1))
+        {
+            var marker = AgentMap.Instance()->FlagMapMarker;
+            value = new(marker.XFloat, marker.YFloat);
+        }
+        ScreenToWorldSelector(id, ref value);
+        ImGuiEx.Tooltip("To map flag");
     }
 
     public static void DrawVector3Selector(string id, ref Vector3 value)
@@ -294,6 +371,14 @@ internal static unsafe class Utils
         }
         ScreenToWorldSelector(id, ref value);
         ImGuiEx.Tooltip("Select with mouse");
+        ImGui.SameLine();
+        if(ImGuiEx.IconButton(FontAwesomeIcon.Flag, $"flag{id}", enabled: Player.Interactable && AgentMap.Instance()->IsFlagMarkerSet == 1))
+        {
+            var marker = AgentMap.Instance()->FlagMapMarker;
+            value = new(marker.XFloat, 0, marker.YFloat);
+        }
+        ScreenToWorldSelector(id, ref value);
+        ImGuiEx.Tooltip("To map flag");
     }
 
     public static IEnumerable<uint> GetAllRegisteredAethernetDestinations()
@@ -357,6 +442,10 @@ internal static unsafe class Utils
 
     public static HousePathData GetFCPathData() => Utils.GetHousePathDatas().FirstOrDefault(x => x.CID == Player.CID && !x.IsPrivate);
     public static HousePathData GetPrivatePathData() => Utils.GetHousePathDatas().FirstOrDefault(x => x.CID == Player.CID && x.IsPrivate);
+    public static HousePathData GetCustomPathData(ResidentialAetheryteKind kind, int ward, int plot)
+    {
+        return P.Config.HousePathDatas.FirstOrDefault(x => x.ResidentialDistrict == kind && x.Ward == ward && x.Plot == plot) ?? P.Config.CustomHousePathDatas.FirstOrDefault(x => x.ResidentialDistrict == kind && x.Ward == ward && x.Plot == plot);
+    }
 
     /// <summary>
     /// 
@@ -413,12 +502,12 @@ internal static unsafe class Utils
         foreach(var x in Svc.Data.GetExcelSheet<WorldDCGroupType>())
         {
             if(x.RowId == 0 || x.Name == "") continue;
-            if(x.Name.ExtractText().StartsWith(s, StringComparison.OrdinalIgnoreCase))
+            if(x.Name.GetText().StartsWith(s, StringComparison.OrdinalIgnoreCase))
             {
                 var worlds = ExcelWorldHelper.GetPublicWorlds(x.RowId);
                 if(worlds.Length > 0)
                 {
-                    world = worlds[Random.Shared.Next(worlds.Length)].Name;
+                    world = worlds[Random.Shared.Next(worlds.Length)].Name.ToString();
                     dataCenter = x.RowId;
                     if(P.DataStore.Worlds.Contains(world) || P.DataStore.DCWorlds.Contains(world))
                     {
@@ -512,7 +601,7 @@ internal static unsafe class Utils
             .Replace("%numeric", "([0-9]{1,2})");
     }
 
-    public static AddressBookEntry BuildAddressBookEntry(string worldStr, string cityStr, string wardNum, string plotApartmentNum, bool isApartment, bool isSubdivision)
+    public static AddressBookEntry BuildAddressBookEntry(string worldStr, string cityStr, string wardNum, string plotApartmentNum, bool isApartment, bool isSubdivision, string name = null)
     {
         var world = ExcelWorldHelper.Get(worldStr, true);
         if(world == null)
@@ -534,13 +623,14 @@ internal static unsafe class Utils
             var entry = new AddressBookEntry()
             {
                 City = city.Value,
-                World = (int)world.RowId,
+                World = (int)world?.RowId,
                 PropertyType = isApartment ? PropertyType.公寓 : PropertyType.房屋,
                 Ward = ward,
                 Apartment = plot,
                 Plot = plot,
                 ApartmentSubdivision = isSubdivision,
             };
+            if(name != null) entry.Name = name;
             return entry;
         }
         return null;
@@ -581,7 +671,7 @@ internal static unsafe class Utils
         var h = HousingManager.Instance();
         if(h == null) return false;
         if(h->GetCurrentWard() != entry.Ward - 1) return false;
-        if(Utils.GetResidentialAetheryteByTerritoryType(Svc.ClientState.TerritoryType) != entry.City) return false;
+        if(Utils.GetResidentialAetheryteByTerritoryType(P.Territory) != entry.City) return false;
         if(entry.PropertyType == PropertyType.房屋)
         {
             return h->GetCurrentPlot() == entry.Plot - 1;
@@ -598,7 +688,7 @@ internal static unsafe class Utils
     {
         if(P.ResidentialAethernet.HousingData.Data.SafeSelect(entry.City.GetResidentialTerritory())?.SafeSelect(entry.Ward - 1)?.AethernetID.EqualsAny(ResidentialAethernet.StartingAetherytes) != false) return false;
         var h = HousingManager.Instance();
-        return h != null && entry.City.GetResidentialTerritory() == Svc.ClientState.TerritoryType && Player.Available && h->GetCurrentWard() == entry.Ward - 1 && P.ResidentialAethernet.ActiveAetheryte != null && entry.World == Player.Object.CurrentWorld.Id;
+        return h != null && entry.City.GetResidentialTerritory() == P.Territory && Player.Available && h->GetCurrentWard() == entry.Ward - 1 && P.ResidentialAethernet.ActiveAetheryte != null && entry.World == Player.Object.CurrentWorld.RowId;
     }
 
     public static void GoTo(this AddressBookEntry entry)
@@ -658,6 +748,8 @@ internal static unsafe class Utils
     }
 
     public static bool? WaitForScreen() => IsScreenReady();
+
+    public static bool? WaitForScreenFalse() => !IsScreenReady();
 
     public static bool ResidentialAetheryteEnumSelector(string name, ref ResidentialAetheryteKind refConfigField)
     {
@@ -774,7 +866,7 @@ internal static unsafe class Utils
                 var item = data->StringArray[i];
                 if (item != null)
                 {
-                    var str = MemoryHelper.ReadSeStringNullTerminated((nint)item).ExtractText();
+                    var str = MemoryHelper.ReadSeStringNullTerminated((nint)item).GetText();
                     if (str == "") break;
                     ret.Add(str);
                 }
@@ -796,13 +888,12 @@ internal static unsafe class Utils
     internal static string GetInnNameFromTerritory(uint tt)
     {
         if(tt == 0) return "自动检测";
-        var t = Svc.Data.GetExcelSheet<TerritoryType>().GetRow(tt);
-        if(t != null)
+        if(Svc.Data.GetExcelSheet<TerritoryType>().TryGetRow(tt, out var t))
         {
-            var inn = Svc.Data.GetExcelSheet<TerritoryType>().FirstOrDefault(x => x.PlaceNameRegion.Value?.RowId == t.PlaceNameRegion.Value.RowId && x.TerritoryIntendedUse == (int)TerritoryIntendedUseEnum.Inn);
+            var inn = Svc.Data.GetExcelSheet<TerritoryType>().FirstOrNull(x => x.PlaceNameRegion.ValueNullable?.RowId == t.PlaceNameRegion.Value.RowId && x.TerritoryIntendedUse.RowId == (int)TerritoryIntendedUseEnum.Inn);
             if(inn != null)
             {
-                return inn.PlaceNameZone.Value.Name;
+                return inn.Value.PlaceNameZone.Value.Name.ToString();
             }
         }
         return "???";
@@ -895,7 +986,7 @@ internal static unsafe class Utils
         if(P.TaskManager.IsBusy || IsOccupied() || IsDisallowedToUseAethernet()) return AetheryteUseState.None;
         if(P.DataStore.Territories.Contains(P.Territory) && P.ActiveAetheryte != null) return AetheryteUseState.Normal;
         if(P.ResidentialAethernet.IsInResidentialZone() && P.ResidentialAethernet.ActiveAetheryte != null) return AetheryteUseState.Residential;
-        if(P.CustomAethernet.ZoneInfo.ContainsKey(Svc.ClientState.TerritoryType) && P.CustomAethernet.ActiveAetheryte != null) return AetheryteUseState.Custom;
+        if(P.CustomAethernet.ZoneInfo.ContainsKey(P.Territory) && P.CustomAethernet.ActiveAetheryte != null) return AetheryteUseState.Custom;
         return AetheryteUseState.None;
     }
 
@@ -958,7 +1049,7 @@ internal static unsafe class Utils
     }
     internal static string GetName(this ResidentialAetheryteKind r)
     {
-        return ExcelTerritoryHelper.Get(r.GetResidentialTerritory()).PlaceName.Value?.Name;
+        return ExcelTerritoryHelper.Get(r.GetResidentialTerritory())?.PlaceName.ValueNullable?.Name.ToString();
     }
 
     internal static uint GetTerritory(this WorldChangeAetheryte r)
@@ -968,13 +1059,13 @@ internal static unsafe class Utils
 
     internal static ResidentialAetheryteKind? GetResidentialAetheryteByTerritoryType(uint territoryType)
     {
-        var t = Svc.Data.GetExcelSheet<TerritoryType>().GetRow(territoryType);
+        var t = Svc.Data.GetExcelSheet<TerritoryType>().GetRowOrDefault(territoryType);
         if(t == null) return null;
-        if(t.PlaceNameRegion.Row == 2402) return ResidentialAetheryteKind.Kugane;
-        if(t.PlaceNameRegion.Row == 25) return ResidentialAetheryteKind.Foundation;
-        if(t.PlaceNameRegion.Row == 23) return ResidentialAetheryteKind.Gridania;
-        if(t.PlaceNameRegion.Row == 24) return ResidentialAetheryteKind.Uldah;
-        if(t.PlaceNameRegion.Row == 22) return ResidentialAetheryteKind.Limsa;
+        if(t.Value.PlaceNameRegion.RowId == 2402) return ResidentialAetheryteKind.Kugane;
+        if(t.Value.PlaceNameRegion.RowId == 25) return ResidentialAetheryteKind.Foundation;
+        if(t.Value.PlaceNameRegion.RowId == 23) return ResidentialAetheryteKind.Gridania;
+        if(t.Value.PlaceNameRegion.RowId == 24) return ResidentialAetheryteKind.Uldah;
+        if(t.Value.PlaceNameRegion.RowId == 22) return ResidentialAetheryteKind.Limsa;
         return null;
     }
 
@@ -986,7 +1077,7 @@ internal static unsafe class Utils
 
     internal static bool TryGetTinyAetheryteFromIGameObject(IGameObject a, out TinyAetheryte? t, uint? TerritoryType = null)
     {
-        TerritoryType ??= Svc.ClientState.TerritoryType;
+        TerritoryType ??= P.Territory;
         if(a == null)
         {
             t = default;
@@ -1049,7 +1140,7 @@ internal static unsafe class Utils
                 if(IsAddonReady(addon))
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
-                    var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText().Replace(" ", "");
+                    var text = GenericHelpers.ReadSeString(&textNode->NodeText).GetText().Replace(" ", "");
                     if(contains ?
                         text.ContainsAny(s.Select(x => x.Replace(" ", "")))
                         : text.EqualsAny(s.Select(x => x.Replace(" ", "")))
@@ -1077,7 +1168,7 @@ internal static unsafe class Utils
             for(var i = 3; i <= 9; i++)
             {
                 var item = addon->UldManager.NodeList[4]->GetAsAtkComponentNode()->Component->UldManager.NodeList[i];
-                var text = MemoryHelper.ReadSeString(&item->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText).ExtractText();
+                var text = GenericHelpers.ReadSeString(&item->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText).GetText();
                 if(text == "") break;
                 arr.Add(text);
             }
@@ -1094,7 +1185,7 @@ internal static unsafe class Utils
             for(var i = 1; i <= 52; i++)
             {
                 var item = addon->UldManager.NodeList[16]->GetAsAtkComponentNode()->Component->UldManager.NodeList[i];
-                var text = MemoryHelper.ReadSeString(&item->GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText).ExtractText().Trim();
+                var text = GenericHelpers.ReadSeString(&item->GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText).GetText().Trim();
                 if(text == "") break;
                 arr.Add(text);
             }
@@ -1112,7 +1203,7 @@ internal static unsafe class Utils
                 var d2d = Vector2.Distance(Svc.ClientState.LocalPlayer.Position.ToVector2(), x.Position.ToVector2());
                 var d3d = Vector3.Distance(Svc.ClientState.LocalPlayer.Position, x.Position);
                 if(P.ResidentialAethernet.IsInResidentialZone() && d3d > 4.6f) continue;
-                if(P.CustomAethernet.MaxDistance.TryGetValue(Svc.ClientState.TerritoryType, out var distance) && d3d > distance) continue;
+                if(P.CustomAethernet.MaxDistance.TryGetValue(P.Territory, out var distance) && d3d > distance) continue;
 
                 if(d2d < 11f
                     && d3d < 15f
@@ -1154,9 +1245,9 @@ internal static unsafe class Utils
             if(entry != null)
             {
                 var index = GetEntries(addon).IndexOf(entry);
-                if(index >= 0 && IsSelectItemEnabled(addon, index) && Throttle())
+                if(index >= 0 && Throttle())
                 {
-                    new SelectStringMaster(addon).Entries[index].Select();
+                    new AddonMaster.SelectString(addon).Entries[index].Select();
                     PluginLog.Debug($"TrySelectSpecificEntry: selecting {entry}/{index} as requested by {text.Print()}");
                     return true;
                 }
@@ -1165,21 +1256,12 @@ internal static unsafe class Utils
         return false;
     }
 
-    internal static bool IsSelectItemEnabled(AddonSelectString* addon, int index)
-    {
-        var step1 = (AtkTextNode*)addon->AtkUnitBase
-                    .UldManager.NodeList[2]
-                    ->GetComponent()->UldManager.NodeList[index + 1]
-                    ->GetComponent()->UldManager.NodeList[3];
-        return GenericHelpers.IsSelectItemEnabled(step1);
-    }
-
     internal static List<string> GetEntries(AddonSelectString* addon)
     {
         var list = new List<string>();
         for(var i = 0; i < addon->PopupMenu.PopupMenu.EntryCount; i++)
         {
-            list.Add(MemoryHelper.ReadSeStringNullTerminated((nint)addon->PopupMenu.PopupMenu.EntryNames[i]).ExtractText().Trim());
+            list.Add(MemoryHelper.ReadSeStringNullTerminated((nint)addon->PopupMenu.PopupMenu.EntryNames[i]).GetText().Trim());
         }
         //PluginLog.Debug($"{list.Print()}");
         return list;

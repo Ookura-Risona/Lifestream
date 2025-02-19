@@ -1,6 +1,6 @@
 ﻿using Dalamud.Utility;
 using Lifestream.Enums;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace Lifestream;
 
@@ -46,7 +46,7 @@ internal static class Lang
     internal static readonly string[] ConfirmWorldVisit = ["Travel to", "へ移動します、よろしいですか？", "reisen?", "Voulez-vous vraiment visiter", "确定要移动到", "確定要移動到"];
 
     //2000151	Aethernet shard	0	Aethernet shards	0	1	1	0	0
-    internal static string AethernetShard => Svc.Data.GetExcelSheet<EObjName>().GetRow(2000151).Singular.ToDalamudString().ExtractText();
+    internal static string AethernetShard => Svc.Data.GetExcelSheet<EObjName>().GetRow(2000151).Singular.ToDalamudString().GetText();
 
     //0	TEXT_AETHERYTEISHGARD_HWD_WARP	<Gui(69)/> Travel to the Firmament.
     //0	TEXT_AETHERYTEISHGARD_HWD_WARP	<Gui(69)/> 蒼天街転送
@@ -76,7 +76,7 @@ internal static class Lang
     //12	TEXT_AETHERYTE_MOVE_INSTANCE	<Gui(69)/> In ein instanziiertes Areal wechseln
     //12	TEXT_AETHERYTE_MOVE_INSTANCE	<Gui(69)/> Changer d'instance
     public static readonly string[] TravelToInstancedArea = ["Travel to Instanced Area.", "インスタンスエリアへ移動", "In ein instanziiertes Areal wechseln", "Changer d'instance", "切换副本区", "切換副本區"];
-    public static string ToReduceCongestion => Svc.Data.GetExcelSheet<Addon>().GetRow(2090).Text.ExtractText();
+    public static string ToReduceCongestion => Svc.Data.GetExcelSheet<Addon>().GetRow(2090).Text.GetText();
     public static string[] TravelToYourIsland = ["Travel to your island?", "あなたの島へ向かいますか？", "Zu deiner Insel fahren?", "Voulez-vous aller sur votre île?", "要前往你的小岛吗？"]; // row 4
     public static string[] TravelToMyIsland = ["Travel to my island.", "「自分の島」に行く", "Zur eigenen Insel fahren", "Aller sur son île", "前往自己的小岛"]; // row 7
     public static readonly string[] Entrance =
@@ -97,4 +97,8 @@ internal static class Lang
         "Entrer dans la maison ?",
         "Enter the estate hall?"
     ];
+
+    public static readonly string[] UnableToSelectWorldForDcv = [
+        "Unable to select", "で選択したワールド", "Die für die", "pas être choisi comme destination pour"
+        ];
 }

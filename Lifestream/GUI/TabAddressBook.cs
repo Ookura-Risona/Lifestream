@@ -70,7 +70,7 @@ public static unsafe class TabAddressBook
         if(h != null)
         {
             entry.Ward = h->GetCurrentWard() + 1;
-            if(Svc.ClientState.TerritoryType.EqualsAny(Houses.Ingleside_Apartment, Houses.Kobai_Goten_Apartment, Houses.Lily_Hills_Apartment, Houses.Sultanas_Breath_Apartment, Houses.Topmast_Apartment))
+            if(P.Territory.EqualsAny(Houses.Ingleside_Apartment, Houses.Kobai_Goten_Apartment, Houses.Lily_Hills_Apartment, Houses.Sultanas_Breath_Apartment, Houses.Topmast_Apartment))
             {
                 entry.PropertyType = PropertyType.公寓;
                 entry.ApartmentSubdivision = h->GetCurrentDivision() == 2;
@@ -85,9 +85,9 @@ public static unsafe class TabAddressBook
             }
             if(Player.Available)
             {
-                entry.World = (int)Player.Object.CurrentWorld.Id;
+                entry.World = (int)Player.Object.CurrentWorld.RowId;
             }
-            var ra = Utils.GetResidentialAetheryteByTerritoryType(Svc.ClientState.TerritoryType);
+            var ra = Utils.GetResidentialAetheryteByTerritoryType(P.Territory);
             if(ra != null)
             {
                 entry.City = ra.Value;
@@ -96,65 +96,68 @@ public static unsafe class TabAddressBook
         return entry;
     }
 
-    private static void DrawBook(AddressBookFolder book)
+    public static void DrawBook(AddressBookFolder book, bool readOnly = false)
     {
-        ImGuiEx.LineCentered(() =>
+        if(!readOnly)
         {
-            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "添加新内容"))
+            ImGuiEx.LineCentered(() =>
             {
-                var h = HousingManager.Instance();
-                var entry = GetNewAddressBookEntry();
-                book.Entries.Add(entry);
-                InputWardDetailDialog.Entry = entry;
-            }
-            ImGui.SameLine();
-            if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Paste, "粘贴"))
-            {
-                try
+                if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "新增"))
                 {
-                    var entry = EzConfig.DefaultSerializationFactory.Deserialize<AddressBookEntry>(Paste());
-                    if(entry != null)
+                    var h = HousingManager.Instance();
+                    var entry = GetNewAddressBookEntry();
+                    book.Entries.Add(entry);
+                    InputWardDetailDialog.Entry = entry;
+                }
+                ImGui.SameLine();
+                if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Paste, "Paste"))
+                {
+                    try
                     {
-                        if(!entry.IsValid(out var error))
+                        var entry = EzConfig.DefaultSerializationFactory.Deserialize<AddressBookEntry>(Paste());
+                        if(entry != null)
                         {
-                            Notify.Error($"无法从剪贴板粘贴:\n{error}");
+                            if(!entry.IsValid(out var error))
+                            {
+                                Notify.Error($"无法从剪贴板粘贴:\n{error}");
+                            }
+                            else
+                            {
+                                book.Entries.Add(entry);
+                            }
                         }
                         else
                         {
-                            book.Entries.Add(entry);
+                            Notify.Error($"Could not paste from clipboard");
                         }
                     }
-                    else
+                    catch(Exception e)
                     {
-                        Notify.Error($"无法从剪贴板粘贴");
+                        if(Utils.TryParseAddressBookEntry(Paste(), out var entry))
+                        {
+                            book.Entries.Add(entry);
+                        }
+                        else
+                        {
+                            Notify.Error($"无法从剪贴板粘贴:\n{e.Message}");
+                        }
                     }
                 }
-                catch(Exception e)
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(100f);
+                ImGuiEx.EnumCombo("##sort", ref book.SortMode, SortModeNames);
+                ImGuiEx.Tooltip($"Select sort mode for this address book");
+                ImGui.SameLine();
+                if(ImGui.Checkbox($"Default", ref book.IsDefault))
                 {
-                    if(Utils.TryParseAddressBookEntry(Paste(), out var entry))
+                    if(book.IsDefault)
                     {
-                        book.Entries.Add(entry);
-                    }
-                    else
-                    {
-                        Notify.Error($"无法从剪贴板粘贴:\n{e.Message}");
+                        P.Config.AddressBookFolders.Where(z => z != book).Each(z => z.IsDefault = false);
                     }
                 }
-            }
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(100f);
-            ImGuiEx.EnumCombo("##sort", ref book.SortMode, SortModeNames);
-            ImGuiEx.Tooltip($"选择此地址簿的排序模式");
-            ImGui.SameLine();
-            if(ImGui.Checkbox($"默认", ref book.IsDefault))
-            {
-                if(book.IsDefault)
-                {
-                    P.Config.AddressBookFolders.Where(z => z != book).Each(z => z.IsDefault = false);
-                }
-            }
-            ImGuiEx.Tooltip($"当您在游戏中首次打开插件时，默认地址簿会自动打开。");
-        });
+                ImGuiEx.Tooltip($"当您在游戏中首次打开插件时，默认地址簿会自动打开。");
+            });
+        }
 
         if(ImGui.BeginTable($"##addressbook", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit))
         {
@@ -300,7 +303,7 @@ public static unsafe class TabAddressBook
                 ImGui.TableNextColumn();
 
                 var wcol = ImGuiColors.DalamudGrey;
-                if(Player.Available && Player.Object.CurrentWorld.GameData.DataCenter.Row == ExcelWorldHelper.Get((uint)entry.World).DataCenter.Row)
+                if(Player.Available && Player.Object.CurrentWorld.ValueNullable?.DataCenter.RowId == ExcelWorldHelper.Get((uint)entry.World)?.DataCenter.RowId)
                 {
                     wcol = ImGuiColors.DalamudGrey;
                 }
@@ -308,7 +311,7 @@ public static unsafe class TabAddressBook
                 {
                     if(!P.DataStore.DCWorlds.Contains(ExcelWorldHelper.GetName(entry.World))) wcol = ImGuiColors.DalamudGrey3;
                 }
-                if(Player.Available && Player.Object.CurrentWorld.Id == entry.World) wcol = new Vector4(0.9f, 0.9f, 0.9f, 1f);
+                if(Player.Available && Player.Object.CurrentWorld.RowId == entry.World) wcol = new Vector4(0.9f, 0.9f, 0.9f, 1f);
 
                 ImGuiEx.TextV(wcol, ExcelWorldHelper.GetName(entry.World));
 
@@ -352,11 +355,14 @@ public static unsafe class TabAddressBook
 
             ImGui.EndTable();
 
-            foreach(var x in MoveCommands)
+            if(!readOnly)
             {
-                ImGui.SetCursorPos(x.RowPos);
-                ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, ImGuiHelpers.GetButtonSize(" ").Y));
-                x.AcceptDraw();
+                foreach(var x in MoveCommands)
+                {
+                    ImGui.SetCursorPos(x.RowPos);
+                    ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, ImGuiHelpers.GetButtonSize(" ").Y));
+                    x.AcceptDraw();
+                }
             }
         }
     }
