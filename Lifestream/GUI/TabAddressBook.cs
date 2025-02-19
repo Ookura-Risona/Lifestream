@@ -110,7 +110,7 @@ public static unsafe class TabAddressBook
                     InputWardDetailDialog.Entry = entry;
                 }
                 ImGui.SameLine();
-                if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Paste, "Paste"))
+                if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Paste, "粘贴"))
                 {
                     try
                     {
@@ -128,7 +128,7 @@ public static unsafe class TabAddressBook
                         }
                         else
                         {
-                            Notify.Error($"Could not paste from clipboard");
+                            Notify.Error($"无法从剪贴板粘贴");
                         }
                     }
                     catch(Exception e)
@@ -146,9 +146,9 @@ public static unsafe class TabAddressBook
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100f);
                 ImGuiEx.EnumCombo("##sort", ref book.SortMode, SortModeNames);
-                ImGuiEx.Tooltip($"Select sort mode for this address book");
+                ImGuiEx.Tooltip($"选择此地址簿的排序模式");
                 ImGui.SameLine();
-                if(ImGui.Checkbox($"Default", ref book.IsDefault))
+                if(ImGui.Checkbox($"默认", ref book.IsDefault))
                 {
                     if(book.IsDefault)
                     {
@@ -236,7 +236,7 @@ public static unsafe class TabAddressBook
                         }
                         else
                         {
-                            Svc.Toasts.ShowError($"按住 CTRL 并单击可删除条目");
+                            Svc.Toasts.ShowError($"按住 CTRL + 单击可删除条目");
                         }
                     }
                     ImGuiEx.Tooltip($"按住 CTRL 键并单击即可删除");

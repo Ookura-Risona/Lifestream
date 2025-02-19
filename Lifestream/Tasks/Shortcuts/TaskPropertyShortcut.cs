@@ -81,7 +81,7 @@ public static unsafe class TaskPropertyShortcut
                     DuoLog.Error("Could not find free company house");
                 }
             }
-            else if(propertyType == PropertyType.Shared_Estate)
+            else if(propertyType == PropertyType.共享房屋)
             {
                 var e = GetSharedHouseAetheryteId(out var entry);
                 if(e.ID != 0)
@@ -129,7 +129,7 @@ public static unsafe class TaskPropertyShortcut
             EnqueueGoToMyApartment(enterApartment);
             return true;
         }
-        else if(type == PropertyType.Shared_Estate && GetSharedHouseAetheryteId(out var sharedAetheryte).ID != 0)
+        else if(type == PropertyType.共享房屋 && GetSharedHouseAetheryteId(out var sharedAetheryte).ID != 0)
         {
             var s = GetSharedHouseAetheryteId(out var entry);
             var data = Utils.GetCustomPathData(Utils.GetResidentialAetheryteByTerritoryType(entry.TerritoryId).Value, entry.Ward-1, entry.Plot-1);

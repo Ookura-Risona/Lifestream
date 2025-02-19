@@ -24,7 +24,7 @@ public static unsafe class UIHouseReg
     {
         if(Player.Available)
         {
-            NuiTools.ButtonTabs([[new("个人房屋", DrawPrivate), new("部队房屋", DrawFC), new("Custom House", DrawCustom), new("总览", DrawOverview)]]);
+            NuiTools.ButtonTabs([[new("个人房屋", DrawPrivate), new("部队房屋", DrawFC), new("自定义房屋", DrawCustom), new("总览", DrawOverview)]]);
         }
         else
         {
@@ -60,7 +60,7 @@ public static unsafe class UIHouseReg
             charaDatas.Add((x, P.Config.HousePathDatas.FirstOrDefault(z => z.IsPrivate && z.CID == x), P.Config.HousePathDatas.FirstOrDefault(z => !z.IsPrivate && z.CID == x)));
         }
         DragDropPathData.Begin();
-        if(ImGuiEx.BeginDefaultTable("##charaTable", ["##move", "~Name or CID", "Private", "##privateCtl", "##privateCtl2", "##privateDlm", "FC", "##FCCtl", "Workshop", "##workshopCtl", "##fcCtl", "##fcCtl2"]))
+        if(ImGuiEx.BeginDefaultTable("##charaTable", ["##move", "~Name or CID", "个人房屋", "##privateCtl", "##privateCtl2", "##privateDlm", "部队", "##FCCtl", "工房", "##workshopCtl", "##fcCtl", "##fcCtl2"]))
         {
             for(var i = 0; i < charaDatas.Count; i++)
             {
@@ -86,7 +86,7 @@ public static unsafe class UIHouseReg
                     ImGui.SameLine();
                     ImGuiEx.Text($"{priv.Ward + 1}区, {priv.Plot + 1}号{(priv.PathToEntrance.Count > 0 ? ", +路径" : "")}");
                     ImGui.TableNextColumn();
-                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue50b', "DelePrivate", enabled: ImGuiEx.Ctrl))
+                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue50b', "删除个人房屋", enabled: ImGuiEx.Ctrl))
                     {
                         new TickScheduler(() => P.Config.HousePathDatas.RemoveAll(z => z.IsPrivate && z.CID == charaData.CID));
                     }
@@ -94,19 +94,19 @@ public static unsafe class UIHouseReg
                     if(priv.PathToEntrance.Count > 0)
                     {
                         ImGui.SameLine();
-                        if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "DelePrivatePath", enabled: ImGuiEx.Ctrl))
+                        if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "删除个人房屋路径", enabled: ImGuiEx.Ctrl))
                         {
                             priv.PathToEntrance.Clear();
                         }
-                        ImGuiEx.Tooltip("按住 CTRL + 单击删除到私人房屋的路径。");
+                        ImGuiEx.Tooltip("按住 CTRL + 单击删除到个人房屋的路径。");
                     }
 
                     ImGui.SameLine();
-                    if(ImGuiEx.IconButton(FontAwesomeIcon.Copy, "CopyPrivatePath"))
+                    if(ImGuiEx.IconButton(FontAwesomeIcon.Copy, "复制个人房屋路径"))
                     {
                         Copy(EzConfig.DefaultSerializationFactory.Serialize(priv)!);
                     }
-                    ImGuiEx.Tooltip("Copy private registration data to clipboard");
+                    ImGuiEx.Tooltip("将个人房屋注册数据复制到剪贴板");
                     ImGui.SameLine();
                 }
                 else
@@ -117,11 +117,11 @@ public static unsafe class UIHouseReg
 
                 ImGui.TableNextColumn();
 
-                if(ImGuiEx.IconButton(FontAwesomeIcon.Paste, "PastePriva"))
+                if(ImGuiEx.IconButton(FontAwesomeIcon.Paste, "粘贴个人房屋"))
                 {
                     ImportFromClipboard(charaData.CID, true);
                 }
-                ImGuiEx.Tooltip("Paste private registration data from clipboard");
+                ImGuiEx.Tooltip("从剪贴板粘贴个人房屋注册数据");
 
                 ImGui.TableNextColumn();
                 //delimiter
@@ -132,9 +132,9 @@ public static unsafe class UIHouseReg
                 {
                     NuiTools.RenderResidentialIcon((uint)fc.ResidentialDistrict.GetResidentialTerritory());
                     ImGui.SameLine();
-                    ImGuiEx.Text($"W{fc.Ward + 1}, P{fc.Plot + 1}{(fc.PathToEntrance.Count > 0 ? ", +path" : "")}");
+                    ImGuiEx.Text($"{fc.Ward + 1}区, {fc.Plot + 1}号{(fc.PathToEntrance.Count > 0 ? ", +路径" : "")}");
                     ImGui.TableNextColumn();
-                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue50b', "DeleFc", enabled: ImGuiEx.Ctrl))
+                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue50b', "删除部队房屋", enabled: ImGuiEx.Ctrl))
                     {
                         new TickScheduler(() => P.Config.HousePathDatas.RemoveAll(z => !z.IsPrivate && z.CID == charaData.CID));
                     }
@@ -142,7 +142,7 @@ public static unsafe class UIHouseReg
                     if(fc.PathToEntrance.Count > 0)
                     {
                         ImGui.SameLine();
-                        if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "DeleFcPath", enabled: ImGuiEx.Ctrl))
+                        if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "删除部队房屋路径", enabled: ImGuiEx.Ctrl))
                         {
                             fc.PathToEntrance.Clear();
                         }
@@ -165,7 +165,7 @@ public static unsafe class UIHouseReg
                 {
                     ImGuiEx.TextV($"{fc.PathToWorkshop.Count} points");
                     ImGui.TableNextColumn();
-                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "DeleFcWorkshopPath", enabled:ImGuiEx.Ctrl))
+                    if(ImGuiEx.IconButton((FontAwesomeIcon)'\ue566', "删除工房路径", enabled:ImGuiEx.Ctrl))
                     {
                         fc.PathToWorkshop.Clear();
                     }
@@ -176,20 +176,20 @@ public static unsafe class UIHouseReg
 
                 if(fc != null)
                 {
-                    if(ImGuiEx.IconButton(FontAwesomeIcon.Copy, "CopyFCPath"))
+                    if(ImGuiEx.IconButton(FontAwesomeIcon.Copy, "复制部队房屋路径"))
                     {
                         Copy(EzConfig.DefaultSerializationFactory.Serialize(fc)!);
                     }
-                    ImGuiEx.Tooltip("Copy free company registration data to clipboard");
+                    ImGuiEx.Tooltip("将部队房屋注册数据复制到剪贴板");
                     ImGui.SameLine();
                 }
 
                 ImGui.TableNextColumn();
-                if(ImGuiEx.IconButton(FontAwesomeIcon.Paste, "PasteFC"))
+                if(ImGuiEx.IconButton(FontAwesomeIcon.Paste, "粘贴部队房屋"))
                 {
                     ImportFromClipboard(charaData.CID, false);
                 }
-                ImGuiEx.Tooltip("Paste free company registration data from clipboard");
+                ImGuiEx.Tooltip("从剪贴板粘贴部队房屋注册数据");
                 ImGui.PopID();
             }
 
@@ -210,8 +210,8 @@ public static unsafe class UIHouseReg
         {
             try
             {
-                var data = EzConfig.DefaultSerializationFactory.Deserialize<HousePathData>(Paste()!) ?? throw new NullReferenceException("No suitable data forund in clipboard");
-                if(!data.GetType().GetFieldPropertyUnions().All(x => x.GetValue(data) != null)) throw new NullReferenceException("Clipboard contains invalid data");
+                var data = EzConfig.DefaultSerializationFactory.Deserialize<HousePathData>(Paste()!) ?? throw new NullReferenceException("剪贴板中未找到合适的数据");
+                if(!data.GetType().GetFieldPropertyUnions().All(x => x.GetValue(data) != null)) throw new NullReferenceException("剪贴板包含无效数据");
                 var existingData = P.Config.HousePathDatas.FirstOrDefault(x => x.CID == cid && x.IsPrivate == isPrivate);
                 var same = existingData != null && existingData.Ward == data.Ward && existingData.Plot == data.Plot && existingData.ResidentialDistrict == data.ResidentialDistrict;
                 if(same || ImGuiEx.Ctrl)
@@ -229,7 +229,7 @@ public static unsafe class UIHouseReg
                 }
                 else
                 {
-                    Notify.Error($"A different {(isPrivate?"private house plot":"FC house plot")} is already registered for this character. If you want to override it, hold CTRL and click paste button.");
+                    Notify.Error($"已为该角色注册了不同的 {(isPrivate ? "私人房屋地块" : "部队房屋地块")}。如果要覆盖它，请按住 CTRL + 单击粘贴按钮。");
                 }
             }
             catch(Exception e)
@@ -258,14 +258,14 @@ public static unsafe class UIHouseReg
         {
             if(P.Config.HousePathDatas.TryGetFirst(x => x.ResidentialDistrict == kind && x.Ward == ward && x.Plot == plot, out var regData))
             {
-                ImGuiEx.TextWrapped($"This house is already registered as {(regData.IsPrivate ? "private house" : "FC house")} for character {Utils.GetCharaName(regData.CID)} and can not be registered as a custom house.");
+                ImGuiEx.TextWrapped($"该房屋已经由角色 {Utils.GetCharaName(regData.CID)} 注册为 {(regData.IsPrivate ? "个人房屋" : "部队房屋")}，无法注册为自定义房屋。");
             }
             else
             {
                 var data = P.Config.CustomHousePathDatas.FirstOrDefault(x => x.Ward == ward && x.Plot == plot && x.ResidentialDistrict == kind);
                 if(data == null)
                 {
-                    if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "Register this house as custom house"))
+                    if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "将此房屋登记为自定义房屋"))
                     {
                         P.Config.CustomHousePathDatas.Add(new()
                         {
@@ -277,7 +277,7 @@ public static unsafe class UIHouseReg
                 }
                 else
                 {
-                    if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Trash, "Unregister this house", ImGuiEx.Ctrl))
+                    if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Trash, "删除该房屋", ImGuiEx.Ctrl))
                     {
                         new TickScheduler(() => P.Config.CustomHousePathDatas.Remove(data));
                     }
@@ -287,7 +287,7 @@ public static unsafe class UIHouseReg
         }
         else
         {
-            ImGuiEx.TextWrapped($"Please navigate to the plot to register it as custom house. Registering custom house will allow it's path to be used for shared estate teleports and address book teleports.");
+            ImGuiEx.TextWrapped($"请导航至地块，将其注册为自定义房屋。注册自定义房屋将允许其路径用于共享房屋传送和地址簿传送。");
         }
     }
 
@@ -376,7 +376,7 @@ public static unsafe class UIHouseReg
         }
         else
         {
-            ImGuiEx.TextWrapped("Go to registered plot to edit path");
+            ImGuiEx.TextWrapped("前往已注册地块编辑路径");
         }
     }
 
@@ -384,7 +384,7 @@ public static unsafe class UIHouseReg
     {
         if(!TerritoryWatcher.IsDataReliable())
         {
-            ImGuiEx.Text(EColor.RedBright, $"You can not edit house path right now. \nPlease exit and enter your house.");
+            ImGuiEx.Text(EColor.RedBright, $"您现在无法编辑房屋路径。\n请退出并进入您的房屋。");
             return;
         }
         if(ImGuiEx.IconButtonWithText(FontAwesomeIcon.Plus, "添加到列表末尾"))

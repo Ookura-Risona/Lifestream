@@ -146,7 +146,7 @@ public static class TabCustomAlias
             Utils.DrawVector3Selector("走路到坐标", ref command.Point);
         }
 
-        if(command.Kind.EqualsAny(CustomAliasKind.Navmesh_to_point))
+        if(command.Kind.EqualsAny(CustomAliasKind.寻路到坐标))
         {
             ImGui.SameLine();
             ImGuiEx.ButtonCheckbox(FontAwesomeIcon.FastForward, ref command.UseTA, EColor.Green);

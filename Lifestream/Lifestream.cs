@@ -240,7 +240,7 @@ public unsafe class Lifestream : IDalamudPlugin
         }
         else if(arguments.EqualsIgnoreCaseAny("shared"))
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Shared_Estate);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.共享房屋);
         }
         else if(arguments.EqualsIgnoreCaseAny("inn", "hinn") || arguments.StartsWithAny(StringComparison.OrdinalIgnoreCase, "inn ", "hinn "))
         {

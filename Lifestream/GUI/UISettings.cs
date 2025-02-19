@@ -83,23 +83,23 @@ internal static unsafe class UISettings
                 var pref = P.Config.PreferredSharedEstates.SafeSelect(Player.CID);
                 var name = pref switch
                 {
-                    (0, 0, 0) => "First available",
-                    (-1, 0, 0) => "Disable",
-                    _ => $"{ExcelTerritoryHelper.GetName((uint)pref.Territory)}, W{pref.Ward}, P{pref.Plot}"
+                    (0, 0, 0) => "第一个可用",
+                    (-1, 0, 0) => "禁用",
+                    _ => $"{ExcelTerritoryHelper.GetName((uint)pref.Territory)}, {pref.Ward}区, {pref.Plot}号"
                 };
-                if(ImGui.BeginCombo($"Preferred shared estate for {Player.NameWithWorld}", name))
+                if(ImGui.BeginCombo($"首选 {Player.NameWithWorld} 的共享房屋", name))
                 {
                     foreach(var x in Svc.AetheryteList.Where(x => x.IsSharedHouse))
                     {
-                        if(ImGui.RadioButton("First available", pref == default))
+                        if(ImGui.RadioButton("第一个可用", pref == default))
                         {
                             P.Config.PreferredSharedEstates.Remove(Player.CID);
                         }
-                        if(ImGui.RadioButton("Disable", pref == (-1,0,0)))
+                        if(ImGui.RadioButton("禁用", pref == (-1,0,0)))
                         {
                             P.Config.PreferredSharedEstates[Player.CID] = (-1, 0, 0);
                         }
-                        if(ImGui.RadioButton($"{ExcelTerritoryHelper.GetName(x.TerritoryId)}, Ward {x.Ward}, Plot {x.Plot}", pref == ((int)x.TerritoryId, x.Ward, x.Plot)))
+                        if(ImGui.RadioButton($"{ExcelTerritoryHelper.GetName(x.TerritoryId)}, {x.Ward}区, {x.Plot}号", pref == ((int)x.TerritoryId, x.Ward, x.Plot)))
                         {
                             P.Config.PreferredSharedEstates[Player.CID] = ((int)x.TerritoryId, x.Ward, x.Plot);
                         }
@@ -112,7 +112,7 @@ internal static unsafe class UISettings
             ImGui.SameLine();
             if(ImGui.SmallButton("Reset")) P.Config.PropertyPrio.Clear();
             var dragDrop = Ref<ImGuiEx.RealtimeDragDrop<AutoPropertyData>>.Get(() => new("apddd", x => x.Type.ToString()));
-            P.Config.PropertyPrio.AddRange(Enum.GetValues<TaskPropertyShortcut.PropertyType>().Where(x => x != TaskPropertyShortcut.PropertyType.Auto && !P.Config.PropertyPrio.Any(s => s.Type == x)).Select(x => new AutoPropertyData(false, x)));
+            P.Config.PropertyPrio.AddRange(Enum.GetValues<TaskPropertyShortcut.PropertyType>().Where(x => x != TaskPropertyShortcut.PropertyType.自动 && !P.Config.PropertyPrio.Any(s => s.Type == x)).Select(x => new AutoPropertyData(false, x)));
             dragDrop.Begin();
             for(var i = 0; i < P.Config.PropertyPrio.Count; i++)
             {
@@ -169,59 +169,59 @@ internal static unsafe class UISettings
         .Checkbox("从角色选择菜单启用数据中心和服务器访问", () => ref P.Config.AllowDCTravelFromCharaSelect)
         .Checkbox("在访客数据中心上前往同一个服务器时使用跨服传送而不是数据中心访问", () => ref P.Config.UseGuestWorldTravel)
 
-        .Section("Wotsit Integration")
+        .Section("Wotsit整合")
         .Widget(() =>
         {
-            var anyChanged = ImGui.Checkbox("Enable Wotsit Integration for teleporting to Aethernet destinations", ref P.Config.WotsitIntegrationEnabled);
+            var anyChanged = ImGui.Checkbox("启用 Wotsit 集成以传送至以太网目的地", ref P.Config.WotsitIntegrationEnabled);
 
             if(P.Config.WotsitIntegrationEnabled)
             {
                 ImGui.Indent();
-                if(ImGui.Checkbox("Include world select window", ref P.Config.WotsitIntegrationIncludes.WorldSelect))
+                if(ImGui.Checkbox("包括服务器选择窗口", ref P.Config.WotsitIntegrationIncludes.WorldSelect))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include auto-teleport to property", ref P.Config.WotsitIntegrationIncludes.PropertyAuto))
+                if(ImGui.Checkbox("包括自动传送至房产", ref P.Config.WotsitIntegrationIncludes.PropertyAuto))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to private estate", ref P.Config.WotsitIntegrationIncludes.PropertyPrivate))
+                if(ImGui.Checkbox("包括传送至个人房屋", ref P.Config.WotsitIntegrationIncludes.PropertyPrivate))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to free company estate", ref P.Config.WotsitIntegrationIncludes.PropertyFreeCompany))
+                if(ImGui.Checkbox("包括传送至部队房屋", ref P.Config.WotsitIntegrationIncludes.PropertyFreeCompany))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to apartment", ref P.Config.WotsitIntegrationIncludes.PropertyApartment))
+                if(ImGui.Checkbox("包括传送至公寓", ref P.Config.WotsitIntegrationIncludes.PropertyApartment))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to inn room", ref P.Config.WotsitIntegrationIncludes.PropertyInn))
+                if(ImGui.Checkbox("包括传送至旅馆房间", ref P.Config.WotsitIntegrationIncludes.PropertyInn))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to grand company", ref P.Config.WotsitIntegrationIncludes.GrandCompany))
+                if(ImGui.Checkbox("包括传送至军队", ref P.Config.WotsitIntegrationIncludes.GrandCompany))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to market board", ref P.Config.WotsitIntegrationIncludes.MarketBoard))
+                if(ImGui.Checkbox("包括传送至市场板", ref P.Config.WotsitIntegrationIncludes.MarketBoard))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include teleport to island sanctuary", ref P.Config.WotsitIntegrationIncludes.IslandSanctuary))
+                if(ImGui.Checkbox("包括传送至无人岛", ref P.Config.WotsitIntegrationIncludes.IslandSanctuary))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include auto-teleport to aethernet destinations", ref P.Config.WotsitIntegrationIncludes.AetheryteAethernet))
+                if(ImGui.Checkbox("包括自动传送到以太网目的地", ref P.Config.WotsitIntegrationIncludes.AetheryteAethernet))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include address book entries", ref P.Config.WotsitIntegrationIncludes.AddressBook))
+                if(ImGui.Checkbox("包括地址簿条目", ref P.Config.WotsitIntegrationIncludes.AddressBook))
                 {
                     anyChanged = true;
                 }
-                if(ImGui.Checkbox("Include custom aliases", ref P.Config.WotsitIntegrationIncludes.CustomAlias))
+                if(ImGui.Checkbox("包括自定义别名", ref P.Config.WotsitIntegrationIncludes.CustomAlias))
                 {
                     anyChanged = true;
                 }
@@ -230,7 +230,7 @@ internal static unsafe class UISettings
 
             if(anyChanged)
             {
-                PluginLog.Debug("Wotsit integration settings changed, re-initializing immediately");
+                PluginLog.Debug("Wotsit 集成设置已更改，立即重新初始化");
                 S.WotsitManager.TryClearWotsit();
                 S.WotsitManager.MaybeTryInit(true);
             }

@@ -111,7 +111,7 @@ public static class WotsitEntryGenerator
                 DisplayName = "Auto-teleport to property",
                 SearchString = "auto-teleport to property",
                 IconId = 52,
-                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Auto),
+                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.自动),
             };
         }
         if(includes.PropertyPrivate && HasPrivateEstate.Contains(Player.CID))
@@ -121,7 +121,7 @@ public static class WotsitEntryGenerator
                 DisplayName = "Teleport to your private estate",
                 SearchString = "teleport to your private estate - teleport to home",
                 IconId = 52,
-                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Home),
+                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.个人房屋),
             };
         }
         if(includes.PropertyFreeCompany && HasFreeCompanyEstate.Contains(Player.CID))
@@ -131,7 +131,7 @@ public static class WotsitEntryGenerator
                 DisplayName = "Teleport to your free company estate",
                 SearchString = "teleport to your free company estate - teleport to fc",
                 IconId = 52,
-                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.FC),
+                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋),
             };
         }
         if(includes.PropertyApartment && HasApartment.Contains(Player.CID))
@@ -141,7 +141,7 @@ public static class WotsitEntryGenerator
                 DisplayName = "Teleport to your apartment",
                 SearchString = "teleport to your apartment",
                 IconId = 52,
-                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Apartment),
+                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.公寓),
             };
         }
         if(includes.PropertyInn)
@@ -152,7 +152,7 @@ public static class WotsitEntryGenerator
                 DisplayName = "Teleport to an inn room",
                 SearchString = "teleport to an inn room",
                 IconId = 88,
-                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.Inn),
+                Callback = () => TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.旅馆),
             };
         }
         // TODO: each grand company could be a separate entry in the future
