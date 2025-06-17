@@ -76,7 +76,7 @@ public unsafe class Lifestream : IDalamudPlugin
     public Lifestream(IDalamudPluginInterface pluginInterface)
     {
 #if !DEBUG
-        if (pluginInterface.IsDev || !pluginInterface.SourceRepository.Contains("NiGuangOwO/DalamudPlugins"))
+        if (pluginInterface.IsDev || !pluginInterface.SourceRepository.Contains("Ookura-Risona/DalamudPlugins"))
         {
             IsDev = true;
             return;
