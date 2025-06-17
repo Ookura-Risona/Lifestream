@@ -11,6 +11,7 @@ using Lifestream.Enums;
 using Lifestream.Tasks.SameWorld;
 using PInvoke;
 using System.Windows.Forms;
+using ECommons.Automation;
 
 namespace Lifestream.Game;
 
@@ -114,63 +115,41 @@ internal unsafe class Memory : IDisposable
 
     private long AddonAreaMap_ReceiveEventDetour(long a1, ushort a2, uint a3, long a4, long a5)
     {
-        //DuoLog.Information($"{a1}, {a2}, {a3}, {a4}, {a5}");
         try
         {
-            if((P.ActiveAetheryte != null || P.ResidentialAethernet.ActiveAetheryte != null || P.CustomAethernet.ActiveAetheryte != null) && Utils.CanUseAetheryte() != AetheryteUseState.None)
+            if(a2 == 3)
             {
-                if(a2 == 3)
+                IsLeftMouseHeld = Bitmask.IsBitSet(User32.GetKeyState((int)Keys.LButton), 15);
+            }
+            if(a2 == 4 && IsLeftMouseHeld)
+            {
+                IsLeftMouseHeld = false;
+                if(!Bitmask.IsBitSet(User32.GetKeyState((int)Keys.ControlKey), 15) && 
+                   !Bitmask.IsBitSet(User32.GetKeyState((int)Keys.LControlKey), 15) && 
+                   !Bitmask.IsBitSet(User32.GetKeyState((int)Keys.RControlKey), 15))
                 {
-                    IsLeftMouseHeld = Bitmask.IsBitSet(User32.GetKeyState((int)Keys.LButton), 15);
-                }
-                if(a2 == 4 && IsLeftMouseHeld)
-                {
-                    IsLeftMouseHeld = false;
-                    if(!Bitmask.IsBitSet(User32.GetKeyState((int)Keys.ControlKey), 15) && !Bitmask.IsBitSet(User32.GetKeyState((int)Keys.LControlKey), 15) && !Bitmask.IsBitSet(User32.GetKeyState((int)Keys.RControlKey), 15))
+                    if(TryGetAddonByName<AtkUnitBase>("Tooltip", out var addon) && 
+                       IsAddonReady(addon) && 
+                       addon->IsVisible)
                     {
-                        if(TryGetAddonByName<AtkUnitBase>("Tooltip", out var addon) && IsAddonReady(addon) && addon->IsVisible)
+                        var node = addon->UldManager.NodeList[2]->GetAsAtkTextNode();
+                        var text = GenericHelpers.ReadSeString(&node->NodeText).GetText();
+                        if (P.ResidentialAethernet.ActiveAetheryte == null)
                         {
-                            var node = addon->UldManager.NodeList[2]->GetAsAtkTextNode();
-                            var text = GenericHelpers.ReadSeString(&node->NodeText).GetText();
-                            if(P.ActiveAetheryte != null)
+                            Chat.Instance.SendMessage($"/pdrtelepo {text}");
+                        }
+                        
+                        if(P.ResidentialAethernet.ActiveAetheryte != null)
+                        {
+                            var zone = P.ResidentialAethernet.ZoneInfo.SafeSelect(P.Territory);
+                            if(zone != null)
                             {
-                                var master = Utils.GetMaster();
-                                foreach(var x in P.DataStore.Aetherytes[master])
+                                foreach(var x in zone.Aetherytes)
                                 {
                                     if(x.Name == text)
                                     {
-                                        TaskAethernetTeleport.Enqueue(x);
+                                        TaskAethernetTeleport.Enqueue(x.Name);
                                         break;
-                                    }
-                                }
-                            }
-                            if(P.ResidentialAethernet.ActiveAetheryte != null)
-                            {
-                                var zone = P.ResidentialAethernet.ZoneInfo.SafeSelect(P.Territory);
-                                if(zone != null)
-                                {
-                                    foreach(var x in zone.Aetherytes)
-                                    {
-                                        if(x.Name == text)
-                                        {
-                                            TaskAethernetTeleport.Enqueue(x.Name);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if(P.CustomAethernet.ActiveAetheryte != null)
-                            {
-                                var zone = P.CustomAethernet.ZoneInfo.SafeSelect(P.Territory);
-                                if(zone != null)
-                                {
-                                    foreach(var x in zone)
-                                    {
-                                        if(x.Name.StartsWith(text))
-                                        {
-                                            TaskAethernetTeleport.Enqueue(x.Name);
-                                            break;
-                                        }
                                     }
                                 }
                             }
