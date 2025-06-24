@@ -61,7 +61,7 @@ internal static unsafe class UISettings
             ImGui.Unindent();
             //ImGui.Checkbox("Use Return instead of Teleport when possible", ref C.UseReturn);
             //ImGuiEx.HelpMarker("This includes any IPC calls");
-            ImGui.Checkbox("Enable tray notifications upon travel completion", ref C.EnableNotifications);
+            ImGui.Checkbox("传送完成后启用托盘通知", ref C.EnableNotifications);
             ImGuiEx.PluginAvailabilityIndicator([new("NotificationMaster")]);
         })
 
@@ -117,7 +117,7 @@ internal static unsafe class UISettings
             ImGui.SameLine();
             if(ImGui.SmallButton("Reset")) C.PropertyPrio.Clear();
             var dragDrop = Ref<ImGuiEx.RealtimeDragDrop<AutoPropertyData>>.Get(() => new("apddd", x => x.Type.ToString()));
-            C.PropertyPrio.AddRange(Enum.GetValues<TaskPropertyShortcut.PropertyType>().Where(x => x != TaskPropertyShortcut.PropertyType.Auto && !C.PropertyPrio.Any(s => s.Type == x)).Select(x => new AutoPropertyData(false, x)));
+            C.PropertyPrio.AddRange(Enum.GetValues<TaskPropertyShortcut.PropertyType>().Where(x => x != TaskPropertyShortcut.PropertyType.自动 && !C.PropertyPrio.Any(s => s.Type == x)).Select(x => new AutoPropertyData(false, x)));
             dragDrop.Begin();
             for(var i = 0; i < C.PropertyPrio.Count; i++)
             {

@@ -32,7 +32,7 @@ public static unsafe class TaskPropertyShortcut
 
     public static uint[] InnNpc = [1000102, 1000974, 1001976, 1011193, 1018981, 1048375, 1037293, 1027231];
 
-    public static void Enqueue(PropertyType propertyType = PropertyType.Auto, HouseEnterMode? mode = null, int? innIndex = null, bool? enterApartment = null, bool useSameWorld = false, bool workshop = false)
+    public static void Enqueue(PropertyType propertyType = PropertyType.自动, HouseEnterMode? mode = null, int? innIndex = null, bool? enterApartment = null, bool useSameWorld = false, bool workshop = false)
     {
         if(P.TaskManager.IsBusy)
         {
@@ -149,8 +149,8 @@ public static unsafe class TaskPropertyShortcut
 
     private static void ExecuteTpAndPathfind(uint id, uint subIndex, HousePathData data, HouseEnterMode? mode = null, bool workshop = false)
     {
-        mode ??= data?.GetHouseEnterMode() ?? HouseEnterMode.None;
-        if(workshop) mode = HouseEnterMode.Enter_house;
+        mode ??= data?.GetHouseEnterMode() ?? HouseEnterMode.无;
+        if(workshop) mode = HouseEnterMode.进入房屋;
         PluginLog.Information($"id={id}, data={data}, mode={mode}, cnt={data?.PathToEntrance.Count}");
         P.TaskManager.BeginStack();
         try
@@ -158,7 +158,7 @@ public static unsafe class TaskPropertyShortcut
             P.TaskManager.Enqueue(() => WorldChange.ExecuteTPToAethernetDestination(id, subIndex), $"ExecuteTPToAethernetDestination{id}, {subIndex}");
             P.TaskManager.Enqueue(() => !IsScreenReady(), "IsScreenNotReady");
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable, "IsScreenReady and Interactable");
-            if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.Walk_to_door, HouseEnterMode.Enter_house))
+            if(data != null && data.PathToEntrance.Count != 0 && mode.EqualsAny(HouseEnterMode.走到门口, HouseEnterMode.进入房屋))
             {
                 P.TaskManager.Enqueue(() =>
                 {
@@ -170,7 +170,7 @@ public static unsafe class TaskPropertyShortcut
                 }, "ValidateHousingPosition");
                 P.TaskManager.Enqueue(() => P.FollowPath.Move(data.PathToEntrance, true), $"Move to path: {data.PathToEntrance.Print()}");
                 P.TaskManager.Enqueue(() => P.FollowPath.Waypoints.Count == 0, "Wait until movement completes");
-                if(mode == HouseEnterMode.Enter_house)
+                if(mode == HouseEnterMode.进入房屋)
                 {
                     P.TaskManager.Enqueue(() =>
                     {

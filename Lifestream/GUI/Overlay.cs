@@ -49,11 +49,11 @@ public class Overlay : Window
 
     private float GetBasePosX()
     {
-        if(C.PosHorizontal == BasePositionHorizontal.Middle)
+        if(C.PosHorizontal == BasePositionHorizontal.中间)
         {
             return ImGuiHelpers.MainViewport.Size.X / 2 - WSize.X / 2;
         }
-        else if(C.PosHorizontal == BasePositionHorizontal.Right)
+        else if(C.PosHorizontal == BasePositionHorizontal.右边)
         {
             return ImGuiHelpers.MainViewport.Size.X - WSize.X;
         }
@@ -65,11 +65,11 @@ public class Overlay : Window
 
     private float GetBasePosY()
     {
-        if(C.PosVertical == BasePositionVertical.Middle)
+        if(C.PosVertical == BasePositionVertical.中间)
         {
             return ImGuiHelpers.MainViewport.Size.Y / 2 - WSize.Y / 2;
         }
-        else if(C.PosVertical == BasePositionVertical.Bottom)
+        else if(C.PosVertical == BasePositionVertical.底部)
         {
             return ImGuiHelpers.MainViewport.Size.Y - WSize.Y;
         }

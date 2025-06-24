@@ -279,14 +279,14 @@ public class PaissaImporter
 
                 ImGui.TableNextColumn();
 
-                if(entry.PropertyType == PropertyType.House)
+                if(entry.PropertyType == PropertyType.房屋)
                 {
                     ImGuiEx.Text(Colors.TabGreen, Lang.SymbolPlot);
                     ImGuiEx.Tooltip("Plot");
                     ImGui.SameLine(0, 0);
                     ImGuiEx.Text($"{entry.Plot.FancyDigits()}");
                 }
-                if(entry.PropertyType == PropertyType.Apartment)
+                if(entry.PropertyType == PropertyType.公寓)
                 {
                     if(!entry.ApartmentSubdivision)
                     {

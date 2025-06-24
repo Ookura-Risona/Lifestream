@@ -14,47 +14,47 @@ internal static class Lang
     public static readonly (string Normal, string GameFont) Digits = ("0123456789", "");
 
     public static readonly string Help = $"""
-    -- Main Travel --
+    -- 主要旅行 --
 
-    /li → go to your home world
-    /li <world> → go to specified world
-    /li <datacenter> → go to a random world of specified data center
-    /li <aethernet> → go to specified aethernet destination
-    /li <world>, tp <location> → go to specified aetheryte destination of specified world
-    /li <world>, tp <aethernet> → go to specified aethernet destination of specified world
+    /li → 前往你的原始服务器
+    /li <服务器> → 前往指定服务器
+    /li <大区> → 前往指定大区的随机服务器
+    /li <以太水晶> → 前往指定的以太水晶
+    /li <服务器>, tp <位置> → 前往指定服务器的指定以太水晶
+    /li <服务器>, tp <以太水晶> → 前往指定服务器的指定以太水晶
 
-    -- Market Board --
+    -- 市场布告板 --
 
-    /li mb → go to market board
-    /li <world> mb → go to market board of specified world
+    /li mb → 前往市场布告板
+    /li <服务器> mb → 前往指定服务器的市场布告板
 
-    -- Estates --
+    -- 房屋 --
 
-    /li auto → go to your private estate, shared estate, FC estate or apartment, based on configured preference
-    /li shared → go to your shared estate, based on configured preference
-    /li home → go to your private estate, alias: /li home|house|private
-    /li fc → go to your FC estate, alias: /li fc|free|company|free company
-    /li apt → go to your apartment, alias: /li apt|apartment
-    /li ws → go to your FC's workshop, alias: /li ws|workshop
+    /li auto → 根据配置的偏好，前往你的个人房屋、共享房屋、部队房屋或公寓
+    /li shared → 根据配置的偏好，前往你的共享房屋
+    /li home → 前往你的个人房屋，别名：/li home|house|private
+    /li fc → 前往你的部队房屋，别名：/li fc|free|company|free company
+    /li apt → 前往你的公寓，别名：/li apt|apartment
+    /li ws → 前往你部队房屋的部队工房，别名：/li ws|workshop
 
-    /li <district> <ward> <plot> → go to specified plot in current world
-    /li <world> <district> <ward> <plot> → go to specified plot of specified world
-    Examples: /li lavender 1 30, /li goblet 1 30, /li mist 1 30
+    /li <district> <ward> <plot> → 前往当前服务器的指定地块
+    /li <world> <district> <ward> <plot> → 前往指定服务器的指定地块
+    示例：/li lavender 1 30, /li goblet 1 30, /li mist 1 30
 
-    -- Grand Company --
+    -- 大国防联军 --
 
-    /li gc → go to your grand company, alias: /li gc|hcc
-    /li gc <grandcompany> → go to specified grand company, alias: /li gc|hcc <grandcompany>
-    /li gcc → go to your grand company city's FC chest, alias: /li gc|hcc
-    /li gcc <grandcompany> → go to specified grand company city's FC chest, alias: /li gc|hcc <grandcompany>
-    Using "hc" or "hcc" instead of "gc" or "gcc" moves to you to your home world first
+    /li gc → 前往你的大国防联军，别名：/li gc|hcc
+    /li gc <grandcompany> → 前往指定的大国防联军，别名：/li gc|hcc <grandcompany>
+    /li gcc → 前往你大国防联军所在城市的部队箱，别名：/li gc|hcc
+    /li gcc <grandcompany> → 前往指定的大国防联军所在城市的部队箱，别名：/li gc|hcc <grandcompany>
+    使用“hc”或“hcc”代替“gc”或“gcc”会优先将你带回你的原始服务器
 
-    -- Others --
+    -- 其他 --
 
-    /li cosmic → go to Sinus Ardorum, alias: /li cosmic|moon|ardorum
-    /li island → go to Island Sanctuary
-    /li w → open world travel window, alias: /li w|world|open|select
-    /lifestream → open plugin configuration 
+    /li cosmic → 前往 宇宙探索，别名：/li cosmic|moon|ardorum
+    /li island → 前往 无人岛
+    /li w → 打开跨服窗口，别名：/li w|world|open|select
+    /lifestream → 打开插件配置 
     """;
     internal static string[] AdditionalChambersEntrance =>
     [

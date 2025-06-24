@@ -55,7 +55,7 @@ public class CustomAliasCommand
 
     public void Enqueue(List<Vector3> appendMovement)
     {
-        if(Kind == CustomAliasKind.跨服)
+        if(Kind == CustomAliasKind.Change_world)
         {
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
             if(World != Player.Object.CurrentWorld.RowId)
@@ -79,7 +79,7 @@ public class CustomAliasCommand
             P.TaskManager.Enqueue(() => P.FollowPath.Move([Point.Scatter(Scatter), .. appendMovement], true));
             P.TaskManager.Enqueue(() => P.FollowPath.Waypoints.Count == 0);
         }
-        else if(Kind == CustomAliasKind.寻路到坐标)
+        else if(Kind == CustomAliasKind.Navmesh_to_point)
         {
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable && S.Ipc.VnavmeshIPC.IsReady() == true);
             if(UseTA && Svc.PluginInterface.InstalledPlugins.Any(x => x.Name == "TextAdvance" && x.IsLoaded))
@@ -113,7 +113,7 @@ public class CustomAliasCommand
                 });
             }
         }
-        else if(Kind == CustomAliasKind.传送到以太之光)
+        else if(Kind == CustomAliasKind.Teleport_to_Aetheryte)
         {
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
             P.TaskManager.Enqueue(() =>
@@ -130,7 +130,7 @@ public class CustomAliasCommand
                 }
             });
         }
-        else if(Kind == CustomAliasKind.使用传送网)
+        else if(Kind == CustomAliasKind.Use_Aethernet)
         {
             P.TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable, "Wait until screen ready");
             P.TaskManager.Enqueue(() =>

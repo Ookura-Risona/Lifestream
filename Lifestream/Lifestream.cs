@@ -202,7 +202,7 @@ public unsafe class Lifestream : IDalamudPlugin
         }
         else if(arguments.EqualsIgnoreCaseAny("ws", "workshop"))
         {
-            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.FC, workshop: true);
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋, workshop: true);
         }
         else if(arguments.EqualsIgnoreCaseAny("apartment", "apt"))
         {
@@ -341,17 +341,17 @@ public unsafe class Lifestream : IDalamudPlugin
             {
                 if(arguments == "")
                 {
-                    if(Config.LiCommandBehavior == LiCommandBehavior.Open_World_Change_Menu)
+                    if(Config.LiCommandBehavior == LiCommandBehavior.打开跨服菜单)
                     {
                         S.Gui.SelectWorldWindow.IsOpen = true;
                         return;
                     }
-                    else if(Config.LiCommandBehavior == LiCommandBehavior.Open_Configuration)
+                    else if(Config.LiCommandBehavior == LiCommandBehavior.打开配置)
                     {
                         EzConfigGui.Open();
                         return;
                     }
-                    else if(Config.LiCommandBehavior == LiCommandBehavior.Do_Nothing)
+                    else if(Config.LiCommandBehavior == LiCommandBehavior.什么也不做)
                     {
                         return;
                     }

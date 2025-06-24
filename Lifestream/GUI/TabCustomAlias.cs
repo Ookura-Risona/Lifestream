@@ -166,7 +166,7 @@ public static class TabCustomAlias
             point.radius = command.Scatter;
             Splatoon.DisplayOnce(point);
         }
-        else if(command.Kind == CustomAliasKind.寻路到坐标)
+        else if(command.Kind == CustomAliasKind.Navmesh_to_point)
         {
             var point = S.Ipc.SplatoonManager.GetNextPoint($"{index + 1}: Navmesh to");
             point.SetRefCoord(command.Point);
@@ -196,7 +196,7 @@ public static class TabCustomAlias
         ImGui.SetNextItemWidth(150f.Scale());
         ImGuiEx.EnumCombo("Alias kind", ref command.Kind);
 
-        if(command.Kind == CustomAliasKind.传送到以太之光)
+        if(command.Kind == CustomAliasKind.Teleport_to_Aetheryte)
         {
             ImGui.SetNextItemWidth(150f.Scale());
             ImGuiEx.Combo("选择要传送的以太之光", ref command.Aetheryte, Aetherytes, names: AetherytePlaceNames);
@@ -220,7 +220,7 @@ public static class TabCustomAlias
             drawFlight();
         }
 
-        if(command.Kind.EqualsAny(CustomAliasKind.寻路到坐标))
+        if(command.Kind.EqualsAny(CustomAliasKind.Navmesh_to_point))
         {
             ImGui.SameLine();
             ImGuiEx.ButtonCheckbox(FontAwesomeIcon.FastForward, ref command.UseTA, EColor.Green);
@@ -238,7 +238,7 @@ public static class TabCustomAlias
             ImGuiEx.Tooltip("飞行移动。别忘了事先使用“骑乘”命令。");
         }
 
-        if(command.Kind == CustomAliasKind.跨服)
+        if(command.Kind == CustomAliasKind.Change_world)
         {
             ImGui.SetNextItemWidth(150f.Scale());
             WorldSelector.Instance.Draw(ref command.World);
@@ -246,7 +246,7 @@ public static class TabCustomAlias
             ImGuiEx.Text("选择服务器");
         }
 
-        if(command.Kind == CustomAliasKind.使用传送网)
+        if(command.Kind == CustomAliasKind.Use_Aethernet)
         {
             ImGui.SetNextItemWidth(150f.Scale());
             if(ImGui.BeginCombo("Select aethernet shard to teleport to", command.Aetheryte == 0 ? "- Not selected -" : Utils.KnownAetherytes.SafeSelect(command.Aetheryte, command.Aetheryte.ToString()), ImGuiComboFlags.HeightLarge))
