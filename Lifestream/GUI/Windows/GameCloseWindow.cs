@@ -1,10 +1,4 @@
-﻿using Lifestream.Schedulers;
-using NightmareUI.ImGuiElements;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NightmareUI.ImGuiElements;
 
 namespace Lifestream.GUI.Windows;
 public class GameCloseWindow : Window
@@ -31,7 +25,7 @@ public class GameCloseWindow : Window
             ImGuiEx.Text(EColor.RedBright, "Active");
         }
         ImGuiEx.Text($"Shutdown game upon arriving to:");
-        ImGui.SetNextItemWidth(200);
+        ImGui.SetNextItemWidth(200f.Scale());
         WorldSelector.Draw(ref World);
     }
 }

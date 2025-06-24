@@ -12,7 +12,7 @@ public class SelectWorldWindow : Window
 
     public override void Draw()
     {
-        var worlds = P.DataStore.DCWorlds.Concat(P.DataStore.Worlds).Select(x => ExcelWorldHelper.Get(x)).OrderBy(x => x?.Name.ToString());
+        var worlds = S.Data.DataStore.DCWorlds.Concat(S.Data.DataStore.Worlds).Select(x => ExcelWorldHelper.Get(x)).OrderBy(x => x?.Name.ToString());
         if(!worlds.Any())
         {
             ImGuiEx.Text($"No available destinations");
@@ -36,7 +36,7 @@ public class SelectWorldWindow : Window
                 var newSize = ImGuiHelpers.GetButtonSize("" + w?.Name.ToString());
                 if(newSize.X > buttonSize.X) buttonSize = newSize;
             }
-            buttonSize += new Vector2(0, P.Config.ButtonHeightWorld);
+            buttonSize += new Vector2(0, C.ButtonHeightWorld);
             foreach(var dc in datacenters)
             {
                 ImGui.TableNextColumn();

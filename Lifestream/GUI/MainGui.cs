@@ -13,7 +13,13 @@ internal static unsafe class MainGui
             ("自定义别名", TabCustomAlias.Draw, null, true),
             ("Utility", TabUtility.Draw, null, true),
             ("设置", UISettings.Draw, null, true),
+            ("帮助", DrawHelp, null, true),
             ("Debug", UIDebug.Draw, ImGuiColors.DalamudGrey3, true)
             );
+    }
+
+    private static void DrawHelp()
+    {
+        ImGuiEx.TextWrapped(Lang.Help);
     }
 }

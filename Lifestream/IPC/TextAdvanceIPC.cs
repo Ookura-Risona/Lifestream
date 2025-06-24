@@ -1,9 +1,4 @@
 ﻿using ECommons.EzIpcManager;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lifestream.IPC;
 public class TextAdvanceIPC
@@ -55,7 +50,7 @@ public class TextAdvanceIPC
 
     private TextAdvanceIPC()
     {
-        EzIPC.Init(this, "TextAdvance", SafeWrapper.AnyException);
+        EzIPC.Init(this, "TextAdvance", SafeWrapper.AnyException, reducedLogging: true);
     }
 
     public class MoveData

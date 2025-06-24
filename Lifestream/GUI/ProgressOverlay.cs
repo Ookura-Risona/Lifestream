@@ -1,11 +1,13 @@
-﻿using ECommons.SplatoonAPI;
+﻿using ECommons.SimpleGui;
+using ECommons.SplatoonAPI;
 
 namespace Lifestream.GUI;
 
-internal class ProgressOverlay : Window
+public class ProgressOverlay : Window
 {
     public ProgressOverlay() : base("Lifestream progress overlay", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize, true)
     {
+        EzConfigGui.WindowSystem.AddWindow(this);
         IsOpen = true;
         RespectCloseHotkey = false;
     }
@@ -42,7 +44,7 @@ internal class ProgressOverlay : Window
             overlay = $"Lifestream 移动: {P.FollowPath.MaxWaypoints - P.FollowPath.Waypoints.Count}/{P.FollowPath.MaxWaypoints}";
             if(Splatoon.IsConnected())
             {
-                P.SplatoonManager.RenderPath(P.FollowPath.Waypoints);
+                S.Ipc.SplatoonManager.RenderPath(P.FollowPath.Waypoints);
             }
         }
         else
@@ -54,12 +56,20 @@ internal class ProgressOverlay : Window
         ImGui.PushStyleColor(ImGuiCol.PlotHistogram, col);
         ImGui.ProgressBar(percent, new(ImGui.GetContentRegionAvail().X, 20), overlay);
         ImGui.PopStyleColor();
-        Position = new(0, ImGuiHelpers.MainViewport.Size.Y - ImGui.GetWindowSize().Y);
+        // Toggle ProgressOverlay position logic
+        if(C.ProgressOverlayToTop)
+        {
+            Position = new(0, 0);
+        }
+        else
+        {
+            Position = new(0, ImGuiHelpers.MainViewport.Size.Y - ImGui.GetWindowSize().Y);
+        }
     }
 
     public override bool DrawConditions()
     {
-        //return ((P.TaskManager.IsBusy && P.TaskManager.MaxTasks > 0)) && !P.Config.NoProgressBar;
-        return ((P.TaskManager.IsBusy && P.TaskManager.MaxTasks > 0) || (P.followPath != null && P.followPath.Waypoints.Count > 0)) && !P.Config.NoProgressBar;
+        //return ((P.TaskManager.IsBusy && P.TaskManager.MaxTasks > 0)) && !C.NoProgressBar;
+        return ((P.TaskManager.IsBusy && P.TaskManager.MaxTasks > 0) || (P.followPath != null && P.followPath.Waypoints.Count > 0)) && !C.NoProgressBar;
     }
 }

@@ -3,7 +3,6 @@ using ECommons.SimpleGui;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using Lifestream.Systems;
 using Lifestream.Tasks.Login;
-using System.Xml.Serialization;
 using World = Lumina.Excel.Sheets.World;
 
 namespace Lifestream.GUI.Windows;
@@ -45,7 +44,7 @@ public unsafe class CharaSelectOverlay : EzOverlayWindow
             ImGuiEx.Text($"No available destinations");
             return;
         }
-        if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m) && !Utils.IsAddonVisible("SelectYesno") && !Utils.IsAddonVisible("SelectOk") && !Utils.IsAddonVisible("ContextMenu") && !Utils.IsAddonVisible("_CharaSelectWorldServer") && !Utils.IsAddonVisible("AddonContextSub"))
+        if(TryGetValidCharaSelectListMenu(out var m))
         {
             var chara = m.Characters.FirstOrDefault(x => x.Name == CharaName && x.HomeWorld == CharaWorld);
             if(chara == null)
@@ -75,7 +74,7 @@ public unsafe class CharaSelectOverlay : EzOverlayWindow
                     var newSize = ImGuiHelpers.GetButtonSize("" + w.Name.ToString());
                     if(newSize.X > buttonSize.X) buttonSize = newSize;
                 }
-                buttonSize += new Vector2(0, P.Config.ButtonHeightWorld);
+                buttonSize += new Vector2(0, C.ButtonHeightWorld);
                 foreach(var dc in datacenters)
                 {
                     ImGui.TableNextColumn();
@@ -108,6 +107,16 @@ public unsafe class CharaSelectOverlay : EzOverlayWindow
         {
             ImGuiEx.Text("Unable to display world selection.");
         }
+    }
+
+    public static bool TryGetValidCharaSelectListMenu(out AddonMaster._CharaSelectListMenu m)
+    {
+        return TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out m)
+            && !Utils.IsAddonVisible("SelectYesno")
+            && !Utils.IsAddonVisible("SelectOk")
+            && !Utils.IsAddonVisible("ContextMenu")
+            && !Utils.IsAddonVisible("_CharaSelectWorldServer")
+            && !Utils.IsAddonVisible("AddonContextSub");
     }
 
     public static void ReconnectToValidDC(string charaName, uint currentWorld, uint homeWorld, World world, bool noLogin)
@@ -146,12 +155,12 @@ public unsafe class CharaSelectOverlay : EzOverlayWindow
             if(isInHomeDc)
             {
                 PluginLog.Information($"CharaSelectVisit: Return - HomeToHome (1)");
-                CharaSelectVisit.HomeToHome(targetWorld.Name.ToString(), charaName, homeWorld, noLogin: noLogin);
+                CharaSelectVisit.HomeToHome(targetWorld.Name.ToString(), charaName, homeWorld, homeWorld, noLogin: noLogin);
             }
             else
             {
                 PluginLog.Information($"CharaSelectVisit: Return - GuestToHome (2)");
-                CharaSelectVisit.GuestToHome(targetWorld.Name.ToString(), charaName, homeWorld, noLogin: noLogin);
+                CharaSelectVisit.GuestToHome(targetWorld.Name.ToString(), charaName, homeWorld, currentWorld, noLogin: noLogin);
             }
         }
         else
@@ -162,28 +171,28 @@ public unsafe class CharaSelectOverlay : EzOverlayWindow
                 if(charaCurrentWorld?.RowId == charaHomeWorld?.RowId)
                 {
                     PluginLog.Information($"CharaSelectVisit: Visit DC - HomeToGuest (3)");
-                    CharaSelectVisit.HomeToGuest(targetWorld.Name.ToString(), charaName, homeWorld, noLogin: noLogin);
+                    CharaSelectVisit.HomeToGuest(targetWorld.Name.ToString(), charaName, homeWorld, homeWorld, noLogin: noLogin);
                 }
                 else
                 {
                     PluginLog.Information($"CharaSelectVisit: Visit DC - GuestToGuest (5)");
-                    CharaSelectVisit.GuestToGuest(targetWorld.Name.ToString(), charaName, homeWorld, noLogin: noLogin, useSameWorldReturnHome: isInHomeDc);
+                    CharaSelectVisit.GuestToGuest(targetWorld.Name.ToString(), charaName, homeWorld, currentWorld, noLogin: noLogin, useSameWorldReturnHome: isInHomeDc);
                 }
             }
             else
             {
                 //teleporting to the other world's same dc
-                if(isInHomeDc || P.Config.UseGuestWorldTravel)
+                if(isInHomeDc || C.UseGuestWorldTravel)
                 {
                     //just log in and use world visit
                     PluginLog.Information($"CharaSelectVisit: Visit World - GuestToHome (6)");
-                    CharaSelectVisit.GuestToHome(targetWorld.Name.ToString(), charaName, homeWorld, skipReturn: true, noLogin: noLogin);
+                    CharaSelectVisit.GuestToHome(targetWorld.Name.ToString(), charaName, homeWorld, currentWorld, skipReturn: true, noLogin: noLogin);
                 }
                 else
                 {
                     //special guest to guest sequence
                     PluginLog.Information($"CharaSelectVisit: Visit World - GuestToGuest (7)");
-                    CharaSelectVisit.GuestToGuest(targetWorld.Name.ToString(), charaName, homeWorld, noLogin: noLogin);
+                    CharaSelectVisit.GuestToGuest(targetWorld.Name.ToString(), charaName, homeWorld, currentWorld, noLogin: noLogin);
                 }
             }
         }

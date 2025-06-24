@@ -8,6 +8,5 @@
     "RepoUrl": "https://github.com/NightmareXIV/Lifestream",
     "AcceptsFeedback": false,
     "IconUrl": "https://raw.githubusercontent.com/NightmareXIV/MyDalamudPlugins/main/icons/lifestream.png",
-    "DalamudApiLevel": 11,
-    "Changelog":"提前几天增加优雷卡冰火水三岛的悬浮窗，不玩ULK不需要更新"
+    "DalamudApiLevel": 12
 }

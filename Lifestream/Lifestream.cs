@@ -13,6 +13,7 @@ using ECommons.Singletons;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lifestream.Data;
 using Lifestream.Enums;
@@ -42,10 +43,8 @@ public unsafe class Lifestream : IDalamudPlugin
 {
     public string Name => "Lifestream";
     internal static Lifestream P;
-    internal Config Config;
-    internal DataStore DataStore;
-    internal Memory Memory;
-    internal Overlay Overlay;
+    internal static Config C => P.Config;
+    private Config Config;
 
     internal TinyAetheryte? ActiveAetheryte = null;
     internal AutoRetainerApi AutoRetainerApi;
@@ -54,10 +53,7 @@ public unsafe class Lifestream : IDalamudPlugin
 
     public TaskManager TaskManager;
 
-    public ResidentialAethernet ResidentialAethernet;
-    public CustomAethernet CustomAethernet;
     internal FollowPath followPath = null;
-    public Provider IPCProvider;
     public static IDtrBarEntry? Entry;
 
     public FollowPath FollowPath
@@ -68,8 +64,6 @@ public unsafe class Lifestream : IDalamudPlugin
             return followPath;
         }
     }
-    public VnavmeshManager VnavmeshManager;
-    public SplatoonManager SplatoonManager;
     public bool DisableHousePathData = false;
     public CharaSelectOverlay CharaSelectOverlay;
     private bool IsDev;
@@ -97,54 +91,19 @@ public unsafe class Lifestream : IDalamudPlugin
             Config = EzConfig.Init<Config>();
             Utils.CheckConfigMigration();
             EzConfigGui.Init(MainGui.Draw);
-            Overlay = new();
-            TaskManager = new();
-            TaskManager.DefaultConfiguration.ShowDebug = true;
-            EzConfigGui.WindowSystem.AddWindow(Overlay);
-            EzConfigGui.WindowSystem.AddWindow(new ProgressOverlay());
+            TaskManager = new(new(showDebug: true));
             CharaSelectOverlay = new();
             EzConfigGui.WindowSystem.AddWindow(CharaSelectOverlay);
-            EzCmd.Add("/lifestream", ProcessCommand, "打开插件配置");
-            EzCmd.Add("/li", ProcessCommand, """
-                回到你的原始服务器
-                /li <服务器名> - 前往指定的服务器
-                /li <大区名> - 前往指定大区的随机服务器
-                /li <以太水晶名称> - 如果您位于任何受支持的以太网络旁边，则前往指定的以太网络目的地
-
-                /li <地址> - 前往当前服务器中的指定地块，其中地址 - 地块地址格式为“住宅区,房区,房号”格式（不带引号）
-                /li <服务器> <地址> - 前往指定服务器的指定地址
-
-                /li gc|hc - 前往你的大国防联军 (需安装 vnavmesh)
-                /li gc|hc <大国防联军名字> - 前往指定大国防联军 (需安装 vnavmesh)
-                /li gcc|hcc - 前往你大国防联军的部队箱 (需安装 vnavmesh)
-                /li gcc|hcc <大国防联军名字> - 前往指定大国防联军的部队箱 (需安装 vnavmesh)
-                ...其中“gc”或“gcc”将把你带到当前服务器的大国防联军，而“hc”或“hcc”将首先让你返回原始服务器
-
-                /li auto - 前往您的个人房屋、部队房屋或公寓，无论在此顺序中找到什么
-                /li home|house|private - 前往你的个人房屋
-                /li fc|free|company|free company - 前往你的部队房屋
-                /li apartment|apt - 前往你的公寓
-
-                /li w|world|open|select - 打开跨服窗口
-                /li island - 前往无人岛
-                """);
-            DataStore = new();
+            EzCmd.Add("/lifestream", ProcessCommand, null);
+            EzCmd.Add("/li", ProcessCommand, "\n" + Lang.Help);
             ProperOnLogin.RegisterAvailable(() =>
             {
-                DataStore.BuildWorlds();
                 Config.CharaMap[Player.CID] = Player.NameWithWorld;
             });
             Svc.Framework.Update += Framework_Update;
-            Memory = new();
-            //EqualStrings.RegisterEquality("Guilde des aventuriers (Guildes des armuriers & forgeron...", "Guilde des aventuriers (Guildes des armuriers & forgerons/Maelstrom)");
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
             AutoRetainerApi = new();
             NotificationMasterApi = new(Svc.PluginInterface);
-            ResidentialAethernet = new();
-            CustomAethernet = new();
-            VnavmeshManager = new();
-            SplatoonManager = new();
-            IPCProvider = new();
             SingletonServiceManager.Initialize(typeof(Service));
         });
     }
@@ -164,6 +123,9 @@ public unsafe class Lifestream : IDalamudPlugin
 
     internal void ProcessCommand(string command, string arguments)
     {
+        var argsSplit = arguments.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var primary = argsSplit.SafeSelect(0) ?? "";
+        var additionalCommand = argsSplit.Length > 1 ? argsSplit[1..].Join(",") : null;
         if(arguments.StartsWith("debug TaskAetheryteAethernetTeleport "))
         {
             var args = arguments.Split(" ");
@@ -188,12 +150,12 @@ public unsafe class Lifestream : IDalamudPlugin
         }
         else if(arguments == "debug WotsitManager clear")
         {
-            S.WotsitManager.TryClearWotsit();
+            S.Ipc.WotsitManager.TryClearWotsit();
             Notify.Info("WotsitManager cleared, see logs for details");
         }
         else if(arguments == "debug WotsitManager init")
         {
-            S.WotsitManager.MaybeTryInit();
+            S.Ipc.WotsitManager.MaybeTryInit();
             Notify.Info("WotsitManager reinitialized, see logs for details");
         }
         else if(arguments == "stop")
@@ -202,6 +164,10 @@ public unsafe class Lifestream : IDalamudPlugin
             TaskManager.Abort();
             followPath?.Stop();
             TabUtility.TargetWorldID = 0;
+        }
+        else if(arguments != "" && C.AllowCustomOverrides && ProcessCustomShortcuts(arguments))
+        {
+            return;
         }
         else if(arguments.Length == 1 && int.TryParse(arguments, out var val) && val.InRange(1, 9))
         {
@@ -220,7 +186,7 @@ public unsafe class Lifestream : IDalamudPlugin
         }
         else if(arguments.EqualsIgnoreCaseAny("open", "select", "window", "w", "world", "travel"))
         {
-            S.SelectWorldWindow.IsOpen = true;
+            S.Gui.SelectWorldWindow.IsOpen = true;
         }
         else if(arguments == "auto")
         {
@@ -230,9 +196,13 @@ public unsafe class Lifestream : IDalamudPlugin
         {
             TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.个人房屋);
         }
-        else if(arguments.EqualsIgnoreCaseAny("fc", "free", "company", "company", "free company"))
+        else if(arguments.EqualsIgnoreCaseAny("fc", "free", "company", "free company"))
         {
             TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋);
+        }
+        else if(arguments.EqualsIgnoreCaseAny("ws", "workshop"))
+        {
+            TaskPropertyShortcut.Enqueue(TaskPropertyShortcut.PropertyType.部队房屋, workshop: true);
         }
         else if(arguments.EqualsIgnoreCaseAny("apartment", "apt"))
         {
@@ -305,15 +275,42 @@ public unsafe class Lifestream : IDalamudPlugin
             else
             {
                 var name = arglist[1];
-                if(DataStore.IslandNPCs.TryGetFirst(x => x.Value.Any(y => y.Contains(name, StringComparison.OrdinalIgnoreCase)), out var npc))
+                if(S.Data.DataStore.IslandNPCs.TryGetFirst(x => x.Value.Any(y => y.Contains(name, StringComparison.OrdinalIgnoreCase)), out var npc))
                     TaskISShortcut.Enqueue(npc.Key);
                 else
                     DuoLog.Error($"Could not parse input: {name}");
             }
         }
+        else if(arguments.EqualsIgnoreCaseAny("cosmic", "ardorum", "moon"))
+        {
+            if(!Utils.IsBusy())
+            {
+                if(!Player.IsInHomeWorld)
+                {
+                    P.TPAndChangeWorld(Player.HomeWorld, !Player.IsInHomeDC, null, true, null, false, false);
+                }
+                P.TaskManager.Enqueue(() => Player.Interactable && Player.IsInHomeWorld && IsScreenReady());
+                StaticAlias.CosmicExploration.Enqueue(true);
+            }
+            else
+            {
+                Notify.Error("Lifestream is busy");
+            }
+        }
+        else if(arguments.EqualsIgnoreCase("occult"))
+        {
+            if(!Utils.IsBusy())
+            {
+                StaticAlias.OccultCrescent.Enqueue(true);
+            }
+            else
+            {
+                Notify.Error("Lifestream is busy");
+            }
+        }
         else if(arguments.StartsWithAny(StringComparison.OrdinalIgnoreCase, "tp"))
         {
-            var destination = arguments[(arguments.IndexOf("tp") + 2)..].Trim();
+            var destination = primary[(primary.IndexOf("tp") + 2)..].Trim();
             if(destination == null || destination == "")
             {
                 DuoLog.Error($"Please type something");
@@ -322,46 +319,12 @@ public unsafe class Lifestream : IDalamudPlugin
             {
                 if(!P.TaskManager.IsBusy && Player.Interactable)
                 {
-                    foreach(var x in Svc.AetheryteList.Where(s => s.AetheryteData.IsValid))
+                    if(Utils.EnqueueTeleport(destination, additionalCommand))
                     {
-                        if(x.AetheryteData.Value.AethernetName.ToString().Contains(destination, StringComparison.OrdinalIgnoreCase))
-                        {
-                            if(S.TeleportService.TeleportToAetheryte(x.AetheryteId))
-                            {
-                                ChatPrinter.Green($"[Lifestream] Destination (Aethernet): {x.AetheryteData
-                                    .Value.AethernetName.ValueNullable?.Name} at {ExcelTerritoryHelper.GetName(x.AetheryteData.Value.Territory.RowId)}");
-                                return;
-                            }
-                        }
+                        ProcessAdditionalCommand(additionalCommand);
                     }
-                    foreach(var x in Svc.AetheryteList.Where(s => s.AetheryteData.IsValid && s.AetheryteData.Value.PlaceName.IsValid))
-                    {
-                        if(x.AetheryteData.Value.PlaceName.Value.Name.ToString().Contains(destination, StringComparison.OrdinalIgnoreCase))
-                        {
-                            if(S.TeleportService.TeleportToAetheryte(x.AetheryteId))
-                            {
-                                ChatPrinter.Green($"[Lifestream] Destination (Place): {x.AetheryteData
-                                    .Value.PlaceName.ValueNullable?.Name} at {ExcelTerritoryHelper.GetName(x.AetheryteData.Value.Territory.RowId)}");
-                                return;
-                            }
-                        }
-                    }
-                    foreach(var x in Svc.AetheryteList.Where(s => s.AetheryteData.IsValid && s.AetheryteData.Value.Territory.IsValid && s.AetheryteData.Value.Territory.Value.PlaceName.IsValid))
-                    {
-                        if(x.AetheryteData.Value.Territory.Value.PlaceName.Value.Name.ToString().Contains(destination, StringComparison.OrdinalIgnoreCase))
-                        {
-                            if(S.TeleportService.TeleportToAetheryte(x.AetheryteId))
-                            {
-                                ChatPrinter.Green($"[Lifestream] Destination (Zone): {x.AetheryteData
-                                    .Value.Territory.Value.PlaceName.Value.Name} at {ExcelTerritoryHelper.GetName(x.AetheryteData.Value.Territory.RowId)}");
-                                return;
-                            }
-                        }
-                    }
-                    DuoLog.Error($"Could not parse {destination}");
                 }
             }
-
         }
         else if(Utils.TryParseAddressBookEntry(arguments, out var entry))
         {
@@ -376,42 +339,51 @@ public unsafe class Lifestream : IDalamudPlugin
             }
             else
             {
-                foreach(var b in Config.AddressBookFolders)
+                if(arguments == "")
                 {
-                    foreach(var e in b.Entries)
+                    if(Config.LiCommandBehavior == LiCommandBehavior.打开跨服菜单)
                     {
-                        if(e.AliasEnabled && e.Alias != "" && e.Alias.EqualsIgnoreCase(arguments))
-                        {
-                            e.GoTo();
-                            return;
-                        }
+                        S.Gui.SelectWorldWindow.IsOpen = true;
+                        return;
                     }
-                }
-                foreach(var x in Config.CustomAliases)
-                {
-                    if(!x.Enabled || x.Alias == "") continue;
-                    if(x.Alias.EqualsIgnoreCase(arguments))
+                    else if(Config.LiCommandBehavior == LiCommandBehavior.打开配置)
                     {
-                        x.Enqueue();
+                        EzConfigGui.Open();
+                        return;
+                    }
+                    else if(Config.LiCommandBehavior == LiCommandBehavior.什么也不做)
+                    {
                         return;
                     }
                 }
+                if(ProcessCustomShortcuts(primary))
+                {
+                    ProcessAdditionalCommand(additionalCommand);
+                    return;
+                }
 
-                var argsSplit = arguments.Split(' ');
-                var primary = arguments.Split(' ').SafeSelect(0);
-                var additionalCommand = argsSplit.Length > 1 ? argsSplit[1..].Join(" ") : null;
+                foreach(var x in (string[])[
+                    ..Utils.LifestreamNativeCommands,
+                    ..C.CustomAliases.Where(x => x.Enabled && x.Alias != "").Select(x => x.Alias),
+                    ..C.AddressBookFolders.SelectMany(x => x.Entries).Where(x => x.AliasEnabled && x.Alias != "").Select(x => x.Alias)])
+                {
+                    if(arguments.EndsWith($" {x}", StringComparison.OrdinalIgnoreCase))
+                    {
+                        arguments = arguments[0..(arguments.Length - x.Length)] + $",{x}";
+                    }
+                }
                 WorldChangeAetheryte? gateway = null;
                 if(additionalCommand == "mb")
                 {
                     gateway = WorldChangeAetheryte.Uldah;
                 }
 
-                if(DataStore.Worlds.TryGetFirst(x => x.StartsWith(primary == "" ? Player.HomeWorld : primary, StringComparison.OrdinalIgnoreCase), out var w))
+                if(S.Data.DataStore.Worlds.TryGetFirst(x => x.StartsWith(primary == "" ? Player.HomeWorld : primary, StringComparison.OrdinalIgnoreCase), out var w))
                 {
                     PluginLog.Information($"Same dc/{primary}/{w}");
                     TPAndChangeWorld(w, false, gateway: gateway);
                 }
-                else if(DataStore.DCWorlds.TryGetFirst(x => x.StartsWith(primary == "" ? Player.HomeWorld : primary, StringComparison.OrdinalIgnoreCase), out var dcw))
+                else if(S.Data.DataStore.DCWorlds.TryGetFirst(x => x.StartsWith(primary == "" ? Player.HomeWorld : primary, StringComparison.OrdinalIgnoreCase), out var dcw))
                 {
                     PluginLog.Information($"Cross dc/{primary}/{w}");
                     TPAndChangeWorld(dcw, true, gateway: gateway);
@@ -423,15 +395,20 @@ public unsafe class Lifestream : IDalamudPlugin
                 }
                 else
                 {
-                    TaskTryTpToAethernetDestination.Enqueue(primary);
+                    TaskTryTpToAethernetDestination.Enqueue(primary, true, true);
                 }
 
-                if(additionalCommand != null)
-                {
-                    TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
-                    TaskManager.Enqueue(() => Svc.Framework.RunOnTick(() => Svc.Commands.ProcessCommand($"/li {additionalCommand}"), delayTicks:1));
-                }
+                ProcessAdditionalCommand(additionalCommand);
             }
+        }
+    }
+
+    private void ProcessAdditionalCommand(string additionalCommand)
+    {
+        if(additionalCommand != null)
+        {
+            TaskManager.Enqueue(() => IsScreenReady() && Player.Interactable);
+            TaskManager.Enqueue(() => Svc.Framework.RunOnTick(() => Svc.Commands.ProcessCommand($"/li {additionalCommand}"), delayTicks: 1));
         }
     }
 
@@ -443,7 +420,7 @@ public unsafe class Lifestream : IDalamudPlugin
             CharaSelectVisit.ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
             if(!skipChecks)
             {
-                if(isDcTransfer && !P.Config.AllowDcTransfer)
+                if(isDcTransfer && !C.AllowDcTransfer)
                 {
                     Notify.Error($"Data center transfers are not enabled in the configuration.");
                     return;
@@ -469,7 +446,7 @@ public unsafe class Lifestream : IDalamudPlugin
                 Notify.Error("You are unable to teleport at this time");
                 return;
             }*/
-            if(Svc.Party.Length > 1 && !P.Config.LeavePartyBeforeWorldChange && !P.Config.LeavePartyBeforeWorldChange)
+            if(Svc.Party.Length > 1 && !C.LeavePartyBeforeWorldChange && !C.LeavePartyBeforeWorldChange)
             {
                 Notify.Warning("You must disband party in order to switch worlds");
             }
@@ -515,17 +492,17 @@ public unsafe class Lifestream : IDalamudPlugin
                     if(!Player.IsInHomeWorld) TaskTPAndChangeWorld.Enqueue(Player.HomeWorld, gateway.Value.AdjustGateway(), false);
                     TaskWaitUntilInHomeWorld.Enqueue();
                     TaskLogoutAndRelog.Enqueue(Player.NameWithWorld);
-                    CharaSelectVisit.HomeToGuest(destinationWorld, Player.Name, Player.Object.HomeWorld.RowId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
+                    CharaSelectVisit.HomeToGuest(destinationWorld, Player.Name, Player.HomeWorldId, Player.HomeWorldId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
                 }
                 else if(type == DCVType.GuestToHome)
                 {
                     TaskLogoutAndRelog.Enqueue(Player.NameWithWorld);
-                    CharaSelectVisit.GuestToHome(destinationWorld, Player.Name, Player.Object.HomeWorld.RowId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
+                    CharaSelectVisit.GuestToHome(destinationWorld, Player.Name, Player.HomeWorldId, Player.CurrentWorldId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
                 }
                 else if(type == DCVType.GuestToGuest)
                 {
                     TaskLogoutAndRelog.Enqueue(Player.NameWithWorld);
-                    CharaSelectVisit.GuestToGuest(destinationWorld, Player.Name, Player.Object.HomeWorld.RowId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
+                    CharaSelectVisit.GuestToGuest(destinationWorld, Player.Name, Player.HomeWorldId, Player.CurrentWorldId, secondaryTeleport, noSecondaryTeleport, gateway, doNotify, returnToGateway);
                 }
                 else
                 {
@@ -555,7 +532,7 @@ public unsafe class Lifestream : IDalamudPlugin
     {
         YesAlreadyManager.Tick();
         followPath?.Update();
-        if(Svc.ClientState.LocalPlayer != null && DataStore.Territories.Contains(P.Territory))
+        if(Svc.ClientState.LocalPlayer != null && S.Data.DataStore.Territories.Contains(P.Territory))
         {
             UpdateActiveAetheryte();
         }
@@ -563,8 +540,9 @@ public unsafe class Lifestream : IDalamudPlugin
         {
             ActiveAetheryte = null;
         }
-        ResidentialAethernet.Tick();
-        CustomAethernet.Tick();
+        S.Data.ResidentialAethernet.Tick();
+        S.Data.CustomAethernet.Tick();
+        MonitorChatInput();
         if(!Svc.ClientState.IsLoggedIn)
         {
             if(TryGetAddonMaster<AddonMaster._CharaSelectListMenu>(out var m) && m.IsAddonReady)
@@ -581,6 +559,10 @@ public unsafe class Lifestream : IDalamudPlugin
             if(TryGetAddonByName<AtkUnitBase>("Trade", out var trade))
             {
                 Callback.Fire(trade, true, -1);
+            }
+            if(TryGetAddonMaster<AddonMaster.Talk>("Talk", out var m) && m.IsAddonReady)
+            {
+                m.Click();
             }
         }
         if(TabUtility.TargetWorldID != 0)
@@ -616,7 +598,6 @@ public unsafe class Lifestream : IDalamudPlugin
 #endif
         Svc.Framework.Update -= Framework_Update;
         Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
-        Memory.Dispose();
         followPath?.Dispose();
         ECommonsMain.Dispose();
         P = null;
@@ -628,13 +609,13 @@ public unsafe class Lifestream : IDalamudPlugin
         if(a != null)
         {
             var pos2 = a.Position.ToVector2();
-            foreach(var x in DataStore.Aetherytes)
+            foreach(var x in S.Data.DataStore.Aetherytes)
             {
                 if(x.Key.TerritoryType == P.Territory && Vector2.Distance(x.Key.Position, pos2) < 10)
                 {
                     if(ActiveAetheryte == null)
                     {
-                        Overlay.IsOpen = true;
+                        S.Gui.Overlay.IsOpen = true;
                     }
                     ActiveAetheryte = x.Key;
                     return;
@@ -645,7 +626,7 @@ public unsafe class Lifestream : IDalamudPlugin
                     {
                         if(ActiveAetheryte == null)
                         {
-                            Overlay.IsOpen = true;
+                            S.Gui.Overlay.IsOpen = true;
                         }
                         ActiveAetheryte = l;
                         return;
@@ -657,12 +638,127 @@ public unsafe class Lifestream : IDalamudPlugin
         {
             ActiveAetheryte = null;
         }
-        if(!Overlay.IsOpen)
+        if(!S.Gui.Overlay.IsOpen)
         {
-            if(P.Config.ShowInstanceSwitcher && S.InstanceHandler.GetInstance() != 0 && TaskChangeInstance.GetAetheryte() == null && ActiveAetheryte == null)
+            if(C.ShowInstanceSwitcher && S.InstanceHandler.GetInstance() != 0 && TaskChangeInstance.GetAetheryte() == null && ActiveAetheryte == null)
             {
-                Overlay.IsOpen = true;
+                S.Gui.Overlay.IsOpen = true;
             }
         }
+    }
+
+    private unsafe void MonitorChatInput()
+    {
+        try
+        {
+            if(S.SearchHelperOverlay == null) return;
+
+            if(!C.EnableAutoCompletion)
+            {
+                if(S.SearchHelperOverlay.IsOpen)
+                {
+                    S.SearchHelperOverlay.IsOpen = false;
+                }
+                return;
+            }
+
+            var component = GetActiveTextInput();
+            if(component == null)
+            {
+                if(S.SearchHelperOverlay.IsOpen)
+                {
+                    S.SearchHelperOverlay.IsOpen = false;
+                }
+                return;
+            }
+
+            var addon = component->ContainingAddon;
+            if(addon == null) addon = component->ContainingAddon2;
+            if(addon == null || addon->NameString != "ChatLog")
+            {
+                if(S.SearchHelperOverlay.IsOpen)
+                {
+                    S.SearchHelperOverlay.IsOpen = false;
+                }
+                return;
+            }
+
+            var currentText = component->UnkText1.ToString();
+
+            if(currentText.StartsWith("/li", StringComparison.OrdinalIgnoreCase))
+            {
+                if(currentText.Length >= 3)
+                {
+                    S.SearchHelperOverlay.UpdateFilter(currentText);
+                    S.SearchHelperOverlay.IsOpen = true;
+                }
+            }
+            else
+            {
+                if(S.SearchHelperOverlay.IsOpen)
+                {
+                    S.SearchHelperOverlay.IsOpen = false;
+                }
+            }
+        }
+        catch(Exception ex)
+        {
+            if(EzThrottler.Throttle("ChatMonitorError", 5000))
+            {
+                PluginLog.Debug($"Chat monitor error: {ex.Message}");
+            }
+        }
+    }
+
+    private unsafe AtkComponentTextInput* GetActiveTextInput()
+    {
+        try
+        {
+            var mod = RaptureAtkModule.Instance();
+            if(mod == null) return null;
+
+            var basePtr = mod->TextInput.TargetTextInputEventInterface;
+            if(basePtr == null) return null;
+
+            // Memory signature from Dalamud's Completion.cs (line 102)
+            // Used to identify the correct text input component vtable
+            var wantedVtblPtr = Svc.SigScanner.GetStaticAddressFromSig(
+                "48 89 01 48 8D 05 ?? ?? ?? ?? 48 89 81 ?? ?? ?? ?? 48 8D 05 ?? ?? ?? ?? 48 89 81 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8B 48 68",
+                4);
+
+            var vtblPtr = *(nint*)basePtr;
+            if(vtblPtr != wantedVtblPtr) return null;
+
+            return (AtkComponentTextInput*)((AtkComponentInputBase*)basePtr - 1);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private bool ProcessCustomShortcuts(string arguments)
+    {
+        foreach(var b in Config.AddressBookFolders)
+        {
+            foreach(var e in b.Entries)
+            {
+                if(e.AliasEnabled && e.Alias != "" && e.Alias.EqualsIgnoreCase(arguments))
+                {
+                    e.GoTo();
+                    return true;
+                }
+            }
+        }
+        foreach(var x in Config.CustomAliases)
+        {
+            if(!x.Enabled || x.Alias == "") continue;
+            if(x.Alias.EqualsIgnoreCase(arguments))
+            {
+                x.Enqueue();
+                return true;
+            }
+        }
+        return false;
     }
 }

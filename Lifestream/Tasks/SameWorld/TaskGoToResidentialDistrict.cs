@@ -14,7 +14,7 @@ public static unsafe class TaskGoToResidentialDistrict
     public static void Enqueue(int ward)
     {
         if(ward < 1 || ward > 30) throw new ArgumentOutOfRangeException(nameof(ward));
-        if(P.Config.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
+        if(C.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
         P.TaskManager.Enqueue(WorldChange.TargetValidAetheryte);
         P.TaskManager.Enqueue(WorldChange.InteractWithTargetedAetheryte);
         P.TaskManager.Enqueue(() => Utils.TrySelectSpecificEntry(Lang.ResidentialDistrict, () => EzThrottler.Throttle("SelectResidentialDistrict")), $"TaskGoToResidentialDistrictSelect {Lang.ResidentialDistrict}");
@@ -22,17 +22,18 @@ public static unsafe class TaskGoToResidentialDistrict
         if(ward > 1) P.TaskManager.Enqueue(() => SelectWard(ward));
         P.TaskManager.Enqueue(GoToWard);
         P.TaskManager.Enqueue(ConfirmYesNoGoToWard);
-        P.TaskManager.EnqueueTask(new(() => Player.Interactable && P.ResidentialAethernet.IsInResidentialZone(), "Wait until player arrives"));
+        P.TaskManager.EnqueueTask(new(() => Player.Interactable && S.Data.ResidentialAethernet.IsInResidentialZone(), "Wait until player arrives"));
     }
 
     public static bool ConfirmYesNoGoToWard()
     {
+        if(Svc.Condition[ConditionFlag.BetweenAreas] || Svc.Condition[ConditionFlag.BetweenAreas51]) return true;
         var x = (AddonSelectYesno*)Utils.GetSpecificYesno(true, Lang.TravelTo);
         if(x != null)
         {
             if(x->YesButton->IsEnabled && EzThrottler.Throttle("ConfirmTravelTo"))
             {
-                new SelectYesnoMaster(x).Yes();
+                new AddonMaster.SelectYesno(x).Yes();
                 return true;
             }
         }

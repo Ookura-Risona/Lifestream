@@ -11,13 +11,13 @@ using Lifestream.Tasks.SameWorld;
 namespace Lifestream.Systems;
 public static unsafe class CharaSelectVisit
 {
-    public static void HomeToHome(string destinationWorld, string charaName, uint homeWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false)
+    public static void HomeToHome(string destinationWorld, string charaName, uint homeWorld, uint currentLoginWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false)
     {
         ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
-        TaskReturnToHomeWorldCharaSelect.Enqueue(charaName, homeWorld);
+        TaskReturnToHomeWorldCharaSelect.Enqueue(charaName, homeWorld, currentLoginWorld);
         if(!noLogin)
         {
-            TaskSelectChara.Enqueue(charaName, homeWorld);
+            TaskSelectChara.Enqueue(charaName, homeWorld, currentLoginWorld);
             if(ExcelWorldHelper.Get(homeWorld)?.Name != destinationWorld)
             {
                 P.TaskManager.EnqueueMulti([
@@ -36,13 +36,13 @@ public static unsafe class CharaSelectVisit
         }
     }
 
-    public static void GuestToHome(string destinationWorld, string charaName, uint homeWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool skipReturn = false, bool noLogin = false)
+    public static void GuestToHome(string destinationWorld, string charaName, uint homeWorld, uint currentLoginWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool skipReturn = false, bool noLogin = false)
     {
         ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
-        if(!skipReturn) TaskReturnToHomeDC.Enqueue(charaName, homeWorld);
+        if(!skipReturn) TaskReturnToHomeDC.Enqueue(charaName, homeWorld, currentLoginWorld);
         if(!noLogin)
         {
-            TaskSelectChara.Enqueue(charaName, homeWorld);
+            TaskSelectChara.Enqueue(charaName, homeWorld, currentLoginWorld);
             if(ExcelWorldHelper.Get(homeWorld)?.Name != destinationWorld)
             {
                 P.TaskManager.EnqueueMulti([
@@ -61,13 +61,13 @@ public static unsafe class CharaSelectVisit
         }
     }
 
-    public static void HomeToGuest(string destinationWorld, string charaName, uint homeWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false)
+    public static void HomeToGuest(string destinationWorld, string charaName, uint homeWorld, uint currentLoginWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false)
     {
         ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
-        TaskChangeDatacenter.Enqueue(destinationWorld, charaName, homeWorld);
+        TaskChangeDatacenter.Enqueue(destinationWorld, charaName, homeWorld, currentLoginWorld);
         if(!noLogin)
         {
-            TaskSelectChara.Enqueue(charaName, homeWorld);
+            TaskSelectChara.Enqueue(charaName, homeWorld, currentLoginWorld);
             TaskWaitUntilInWorld.Enqueue(destinationWorld, true);
             TaskEnforceWorld.Enqueue(destinationWorld, gateway);
 
@@ -78,21 +78,21 @@ public static unsafe class CharaSelectVisit
         }
     }
 
-    public static void GuestToGuest(string destinationWorld, string charaName, uint homeWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false, bool useSameWorldReturnHome = false)
+    public static void GuestToGuest(string destinationWorld, string charaName, uint homeWorld, uint currentLoginWorld, string secondaryTeleport = null, bool noSecondaryTeleport = false, WorldChangeAetheryte? gateway = null, bool? doNotify = null, bool? returnToGateway = null, bool noLogin = false, bool useSameWorldReturnHome = false)
     {
         ApplyDefaults(ref returnToGateway, ref gateway, ref doNotify);
         if(useSameWorldReturnHome)
         {
-            TaskReturnToHomeWorldCharaSelect.Enqueue(charaName, homeWorld);
+            TaskReturnToHomeWorldCharaSelect.Enqueue(charaName, homeWorld, currentLoginWorld);
         }
         else
         {
-            TaskReturnToHomeDC.Enqueue(charaName, homeWorld);
+            TaskReturnToHomeDC.Enqueue(charaName, homeWorld, currentLoginWorld);
         }
-        TaskChangeDatacenter.Enqueue(destinationWorld, charaName, homeWorld);
+        TaskChangeDatacenter.Enqueue(destinationWorld, charaName, homeWorld, currentLoginWorld);
         if(!noLogin)
         {
-            TaskSelectChara.Enqueue(charaName, homeWorld);
+            TaskSelectChara.Enqueue(charaName, homeWorld, currentLoginWorld);
             TaskWaitUntilInWorld.Enqueue(destinationWorld, true);
             TaskEnforceWorld.Enqueue(destinationWorld, gateway);
             if(gateway != null && returnToGateway == true) TaskReturnToGateway.Enqueue(gateway.Value);
@@ -104,9 +104,9 @@ public static unsafe class CharaSelectVisit
     public static void EnqueueSecondary(bool noSecondaryTeleport, string secondaryTeleport)
     {
         if(noSecondaryTeleport) return;
-        if(secondaryTeleport == null && P.Config.WorldVisitTPToAethernet && !P.Config.WorldVisitTPTarget.IsNullOrEmpty())
+        if(secondaryTeleport == null && C.WorldVisitTPToAethernet && !C.WorldVisitTPTarget.IsNullOrEmpty())
         {
-            secondaryTeleport = P.Config.WorldVisitTPTarget;
+            secondaryTeleport = C.WorldVisitTPTarget;
         }
         if(!secondaryTeleport.IsNullOrEmpty())
         {
@@ -119,8 +119,8 @@ public static unsafe class CharaSelectVisit
 
     public static void ApplyDefaults(ref bool? returnToGateway, ref WorldChangeAetheryte? gateway, ref bool? doNotify)
     {
-        returnToGateway ??= P.Config.DCReturnToGateway;
-        gateway ??= P.Config.WorldChangeAetheryte;
+        returnToGateway ??= C.DCReturnToGateway;
+        gateway ??= C.WorldChangeAetheryte;
         doNotify ??= true;
     }
 }

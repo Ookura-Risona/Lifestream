@@ -10,25 +10,14 @@ internal static class TaskTPAndChangeWorld
     internal static void Enqueue(string world, WorldChangeAetheryte gateway, bool insert)
     {
         P.TaskManager.BeginStack();
-        if(P.Config.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
-        if (P.Config.LeavePartyBeforeWorldChange)
-        {
-            if (Svc.Condition[ConditionFlag.RecruitingWorldOnly])
-            {
-                P.TaskManager.Enqueue(WorldChange.ClosePF);
-                P.TaskManager.Enqueue(WorldChange.OpenSelfPF);
-                P.TaskManager.Enqueue(WorldChange.EndPF);
-                P.TaskManager.Enqueue(WorldChange.WaitUntilNotRecruiting);
-            }
-            P.TaskManager.Enqueue(WorldChange.LeaveParty);
-        }
+        if(C.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
         if(P.ActiveAetheryte != null && P.ActiveAetheryte.Value.IsWorldChangeAetheryte())
         {
-            TaskChangeWorld.Enqueue(world, true);
+            TaskChangeWorld.Enqueue(world);
         }
         else
         {
-            if(Utils.GetReachableWorldChangeAetheryte(!P.Config.WalkToAetheryte) == null)
+            if(Utils.GetReachableWorldChangeAetheryte(!C.WalkToAetheryte) == null)
             {
                 TaskTpToAethernetDestination.Enqueue(gateway);
             }
@@ -48,7 +37,7 @@ internal static class TaskTPAndChangeWorld
             }, "ConditionalLockonTask"));
             P.TaskManager.Enqueue(WorldChange.WaitUntilMasterAetheryteExists);
             P.TaskManager.EnqueueDelay(10, true);
-            TaskChangeWorld.Enqueue(world, true);
+            TaskChangeWorld.Enqueue(world);
         }
         if(insert)
         {

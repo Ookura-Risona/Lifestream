@@ -4,10 +4,10 @@ internal static class UIServiceAccount
 {
     internal static void Draw()
     {
-        ImGuiEx.TextWrapped($"如果您拥有 1 个以上的账号，则必须将每个角色分配给正确的账号。\n要使角色出现在此列表中，请登录该角色。");
-        ImGui.Checkbox($"从 AutoRetainer 获取账号数据", ref P.Config.UseAutoRetainerAccounts);
+        ImGuiEx.TextWrapped($"如果您拥有多个服务帐户，则必须将每个角色分配给正确的服务帐户。\n要使角色出现在此列表中，请登录。");
+        ImGui.Checkbox($"从 AutoRetainer 获取服务帐户数据", ref C.UseAutoRetainerAccounts);
         List<string> ManagedByAR = [];
-        if(P.AutoRetainerApi?.Ready == true && P.Config.UseAutoRetainerAccounts)
+        if(P.AutoRetainerApi?.Ready == true && C.UseAutoRetainerAccounts)
         {
             var chars = P.AutoRetainerApi.GetRegisteredCharacters();
             foreach(var c in chars)
@@ -17,14 +17,14 @@ internal static class UIServiceAccount
                 {
                     var name = $"{data.Name}@{data.World}";
                     ManagedByAR.Add(name);
-                    ImGui.SetNextItemWidth(150f);
-                    if(ImGui.BeginCombo($"{name}", data.ServiceAccount == -1 ? "未选择" : $"账号 {data.ServiceAccount + 1}"))
+                    ImGui.SetNextItemWidth(150f.Scale());
+                    if(ImGui.BeginCombo($"{name}", data.ServiceAccount == -1 ? "未选择" : $"服务帐户 {data.ServiceAccount + 1}"))
                     {
                         for(var i = 0; i < 10; i++)
                         {
                             if(ImGui.Selectable($"账号 {i + 1}"))
                             {
-                                P.Config.ServiceAccounts[name] = i;
+                                C.ServiceAccounts[name] = i;
                                 data.ServiceAccount = i;
                                 P.AutoRetainerApi.WriteOfflineCharacterData(data);
                                 Notify.Info($"设置保存到 AutoRetainer");
@@ -37,22 +37,22 @@ internal static class UIServiceAccount
                 }
             }
         }
-        foreach(var x in P.Config.ServiceAccounts)
+        foreach(var x in C.ServiceAccounts)
         {
             if(ManagedByAR.Contains(x.Key)) continue;
-            ImGui.SetNextItemWidth(150f);
-            if(ImGui.BeginCombo($"{x.Key}", x.Value == -1 ? "未选择" : $"账号 {x.Value + 1}"))
+            ImGui.SetNextItemWidth(150f.Scale());
+            if(ImGui.BeginCombo($"{x.Key}", x.Value == -1 ? "未选择" : $"服务帐户 {x.Value + 1}"))
             {
                 for(var i = 0; i < 10; i++)
                 {
-                    if(ImGui.Selectable($"账号 {i + 1}")) P.Config.ServiceAccounts[x.Key] = i;
+                    if(ImGui.Selectable($"服务帐户 {i + 1}")) C.ServiceAccounts[x.Key] = i;
                 }
                 ImGui.EndCombo();
             }
             ImGui.SameLine();
             if(ImGui.Button("删除"))
             {
-                new TickScheduler(() => P.Config.ServiceAccounts.Remove(x.Key));
+                new TickScheduler(() => C.ServiceAccounts.Remove(x.Key));
             }
         }
     }

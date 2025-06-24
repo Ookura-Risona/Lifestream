@@ -2,11 +2,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>NightmareXIV</Authors>
-        <Version>2.4.0.6</Version>
+        <Version>2.5.1.12</Version>
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFramework>net8.0-windows7.0</TargetFramework>
+        <TargetFramework>net9.0-windows7.0</TargetFramework>
         <Platforms>x64</Platforms>
         <LangVersion>preview</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
+      <ProjectReference Include="..\..\ECommons\ECommons\ECommons.csproj" />
       <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
       <ProjectReference Include="..\NightmareUI.OtterGuiWrapper\NightmareUI.OtterGuiWrapper\NightmareUI.OtterGuiWrapper.csproj" />
       <ProjectReference Include="..\NightmareUI\NightmareUI\NightmareUI.csproj" />
@@ -46,6 +46,10 @@
     <ItemGroup Condition="'$(CustomCS)' != 'true'">
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="InteropGenerator.Runtime">
+            <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

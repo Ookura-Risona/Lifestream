@@ -1,6 +1,4 @@
-﻿
-using Dalamud.Memory;
-using Dalamud.Utility;
+﻿using Dalamud.Utility;
 using ECommons.Automation;
 using ECommons.Automation.UIInput;
 using ECommons.ExcelServices;
@@ -34,7 +32,7 @@ internal static unsafe class DCChange
         {
             DCRethrottle();
             PluginLog.Debug($"[DCChange] Sending logout command");
-            Chat.Instance.SendMessage("/logout");
+            Chat.SendMessage("/logout");
             return true;
         }
         return false;
@@ -154,7 +152,7 @@ internal static unsafe class DCChange
         return false;
     }
 
-    internal static bool? OpenContextMenuForChara(string name, uint world)
+    internal static bool? OpenContextMenuForChara(string name, uint homeWorld, uint currentLoginWorld)
     {
         if(TryGetAddonByName<AddonContextMenu>("ContextMenu", out var m) && IsAddonReady(&m->AtkUnitBase))
         {
@@ -163,7 +161,7 @@ internal static unsafe class DCChange
         }
         if(TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) && IsAddonReady(addon))
         {
-            TaskChangeCharacter.SelectCharacter(name, ExcelWorldHelper.GetName(world), true);
+            TaskChangeCharacter.SelectCharacter(name, ExcelWorldHelper.GetName(homeWorld), ExcelWorldHelper.GetName(currentLoginWorld), true);
         }
         else
         {
@@ -257,7 +255,7 @@ internal static unsafe class DCChange
                             if(text == name && DCThrottle && EzThrottler.Throttle("SelectTargetDataCenter"))
                             {
                                 PluginLog.Debug($"[DCChange] Selecting Target DC {name} index {addonItem} list {listIndex}");
-                                P.Memory.ConstructEvent(addon, category, 1, 7, categoryIndex, addonItem);
+                                S.Memory.ConstructEvent(addon, category, 1, 7, categoryIndex, addonItem);
                                 DCRethrottle();
                                 return false;
                             }
@@ -283,7 +281,7 @@ internal static unsafe class DCChange
         if(TryGetAddonByName<AtkUnitBase>("LobbyDKTWorldList", out var addon) && IsAddonReady(addon))
         {
             var cw = GenericHelpers.ReadSeString(&addon->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText).GetText();
-            if(cw == name || (P.Config.DcvUseAlternativeWorld && cw.EqualsAny(ExcelWorldHelper.GetPublicWorlds(Utils.GetDataCenter(name).RowId).Select(w => w.Name.ToString()))))
+            if(cw == name || (C.DcvUseAlternativeWorld && cw.EqualsAny(ExcelWorldHelper.GetPublicWorlds(Utils.GetDataCenter(name).RowId).Select(w => w.Name.ToString()))))
             {
                 return true;
             }
@@ -299,13 +297,13 @@ internal static unsafe class DCChange
                     if(text == name && DCThrottle && EzThrottler.Throttle("SelectTargetWorld"))
                     {
                         PluginLog.Debug($"[DCChange] Selecting target world {name} index {i}");
-                        P.Memory.ConstructEvent(addon, 0, 2, 6, i - 2, i - 2);
+                        S.Memory.ConstructEvent(addon, 0, 2, 6, i - 2, i - 2);
                         DCRethrottle();
                         return false;
                     }
                 }
             }
-            if(P.Config.DcvUseAlternativeWorld)
+            if(C.DcvUseAlternativeWorld)
             {
                 for(var i = 3; i < 3 + 8; i++)
                 {
@@ -317,7 +315,7 @@ internal static unsafe class DCChange
                         if(text.EqualsAny(ExcelWorldHelper.GetPublicWorlds(Utils.GetDataCenter(name).RowId).Select(w => w.Name.ToString())) && DCThrottle && EzThrottler.Throttle("SelectTargetWorld"))
                         {
                             PluginLog.Debug($"[DCChange] Selecting alternative target world {name} index {i}");
-                            P.Memory.ConstructEvent(addon, 0, 2, 6, i - 2, i - 2);
+                            S.Memory.ConstructEvent(addon, 0, 2, 6, i - 2, i - 2);
                             DCRethrottle();
                             return false;
                         }
@@ -391,7 +389,7 @@ internal static unsafe class DCChange
         return false;
     }
 
-    internal static bool? ConfirmDcVisit2(string destination, string charaName, uint charaWorld)
+    internal static bool? ConfirmDcVisit2(string destination, string charaName, uint charaWorld, uint currentLoginWorld)
     {
         if(TryGetAddonByName<AtkUnitBase>("LobbyDKTCheckExec", out var addon) && IsAddonReady(addon))
         {
@@ -413,7 +411,7 @@ internal static unsafe class DCChange
         {
             DCRethrottle();
         }
-        if(destination != null) TaskChangeDatacenter.ProcessUnableDialogue(destination, charaName, charaWorld);
+        if(destination != null) TaskChangeDatacenter.ProcessUnableDialogue(destination, charaName, charaWorld, currentLoginWorld);
         return false;
     }
 

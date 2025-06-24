@@ -1,5 +1,5 @@
 ﻿namespace Lifestream.Data;
 public enum CustomAliasKind
 {
-    传送到以太之光, 步行到坐标, 寻路到坐标, 跨服, 使用传送网, Circular_movement, Interact,
+    Teleport_to_Aetheryte, Move_to_point, Navmesh_to_point, Change_world, Use_Aethernet, Circular_movement, Interact, Mount_Up, Select_Yes, Select_List_Option, Confirm_Contents_Finder
 }
