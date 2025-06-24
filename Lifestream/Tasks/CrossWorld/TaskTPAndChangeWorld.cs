@@ -13,7 +13,7 @@ internal static class TaskTPAndChangeWorld
         if(C.WaitForScreenReady) P.TaskManager.Enqueue(Utils.WaitForScreen);
         if(P.ActiveAetheryte != null && P.ActiveAetheryte.Value.IsWorldChangeAetheryte())
         {
-            TaskChangeWorld.Enqueue(world, true);
+            TaskChangeWorld.Enqueue(world);
         }
         else
         {
@@ -37,7 +37,7 @@ internal static class TaskTPAndChangeWorld
             }, "ConditionalLockonTask"));
             P.TaskManager.Enqueue(WorldChange.WaitUntilMasterAetheryteExists);
             P.TaskManager.EnqueueDelay(10, true);
-            TaskChangeWorld.Enqueue(world, true);
+            TaskChangeWorld.Enqueue(world);
         }
         if(insert)
         {

@@ -6,7 +6,7 @@ namespace Lifestream.Tasks.CrossWorld;
 
 internal static unsafe class TaskChangeWorld
 {
-    internal static void Enqueue(string world, bool skipLeaveParty = false)
+    internal static void Enqueue(string world)
     {
         try
         {
