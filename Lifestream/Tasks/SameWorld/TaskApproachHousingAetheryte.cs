@@ -15,14 +15,14 @@ public static class TaskApproachHousingAetheryte
     public static void Enqueue()
     {
         P.TaskManager.EnqueueMulti(
-            P.Config.WaitForScreenReady ? new(Utils.WaitForScreen) : null,
+            C.WaitForScreenReady ? new(Utils.WaitForScreen) : null,
             new(() => TaskMoveToHouse.UseSprint(false)),
             new(MoveIMP),
             new(WaitUntilArrivesAtIMP),
             new(TargetNearestShard),
             new(WorldChange.LockOn),
             new(WorldChange.EnableAutomove),
-            new(() => P.ResidentialAethernet.ActiveAetheryte != null, "Wait until residential aetheryte exists"),
+            new(() => S.Data.ResidentialAethernet.ActiveAetheryte != null, "Wait until residential aetheryte exists"),
             new(WorldChange.DisableAutomove)
             );
     }
@@ -35,7 +35,7 @@ public static class TaskApproachHousingAetheryte
         }
         else if(P.Territory.EqualsAny(ResidentalAreas.Shirogane, ResidentalAreas.The_Lavender_Beds))
         {
-            Chat.Instance.ExecuteCommand("/automove on");
+            Chat.ExecuteCommand("/automove on");
         }
     }
 

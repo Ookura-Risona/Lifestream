@@ -20,38 +20,25 @@ public static unsafe class TaskMoveToHouse
     public static bool? UseSprint(bool? mount = null)
     {
         if(Player.IsAnimationLocked) return false;
-        if(mount ?? P.Config.UseMount)
+        if(mount ?? C.UseMount)
         {
-            if(Svc.Condition[ConditionFlag.Casting] || Svc.Condition[ConditionFlag.Unknown57])
+            if(!TaskMount.MountIfCan())
             {
-                EzThrottler.Throttle("MountForceStop", 200, true);
                 return false;
             }
-            if(Svc.Condition[ConditionFlag.Mounted]) return true;
-            if(!EzThrottler.Check("MountForceStop")) return false;
-            if(ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) == 0)
-            {
-                if(EzThrottler.Throttle("UseMount", 3000))
-                {
-                    Chat.Instance.ExecuteGeneralAction(9);
-                }
-            }
-            else
-            {
-                return true;
-            }
-            return false;
         }
-        if(!P.Config.UseSprintPeloton) return true;
-        if(Player.Object.StatusList.Any(x => x.StatusId.EqualsAny<uint>(50, 1199))) return true;
-        uint[] abilities = [3, 7557];
+        if(!C.UseSprintPeloton && !C.UsePeloton) return true;
+        if(Player.Object.StatusList.Any(x => x.StatusId.EqualsAny<uint>(50, 1199, 4209))) return true;
+        List<uint> abilities = [];
+        if(C.UseSprintPeloton) abilities.Add(3);
+        if(C.UsePeloton) abilities.Add(7557);
         foreach(var ability in abilities)
         {
             if(ActionManager.Instance()->GetActionStatus(ActionType.Action, ability) == 0)
             {
                 if(EzThrottler.Throttle("ExecSpritAction"))
                 {
-                    Chat.Instance.ExecuteCommand($"/action \"{Svc.Data.GetExcelSheet<Action>().GetRow(ability).Name.GetText()}\"");
+                    Chat.ExecuteCommand($"/action \"{Svc.Data.GetExcelSheet<Action>().GetRow(ability).Name.GetText()}\"");
                     return true;
                 }
             }

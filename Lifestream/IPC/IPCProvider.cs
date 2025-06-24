@@ -3,16 +3,25 @@ using ECommons.GameHelpers;
 using Lifestream.Data;
 using Lifestream.Enums;
 using Lifestream.GUI;
+using Lifestream.GUI.Windows;
 using Lifestream.Tasks;
+using Lifestream.Tasks.Login;
 using Lifestream.Tasks.SameWorld;
 using Lifestream.Tasks.Shortcuts;
+using Lumina.Excel.Sheets;
 
 namespace Lifestream.IPC;
-public class Provider
+public class IPCProvider
 {
-    public Provider()
+    private IPCProvider()
     {
-        EzIPC.Init(this);
+        EzIPC.Init(this, reducedLogging: true);
+    }
+
+    [EzIPC]
+    public IDalamudPlugin Instance()
+    {
+        return P;
     }
 
     [EzIPC]
@@ -61,13 +70,13 @@ public class Provider
     [EzIPC]
     public bool CanVisitSameDC(string world)
     {
-        return P.DataStore.Worlds.Contains(world);
+        return S.Data.DataStore.Worlds.Contains(world);
     }
 
     [EzIPC]
     public bool CanVisitCrossDC(string world)
     {
-        return P.DataStore.DCWorlds.Contains(world);
+        return S.Data.DataStore.DCWorlds.Contains(world);
     }
 
     [EzIPC]
@@ -99,12 +108,126 @@ public class Provider
         return false;
     }
 
+    /// <summary>
+    /// Requests Lifestream to change world of current character to a different one.
+    /// </summary>
+    /// <param name="worldId"></param>
+    /// <returns></returns>
+    [EzIPC]
+    public bool ChangeWorldById(uint worldId)
+    {
+        if(Svc.Data.GetExcelSheet<World>().TryGetRow(worldId, out var sheet))
+        {
+            return ChangeWorld(sheet.Name.GetText());
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Requests aethernet teleport to be executed by name, if possible. Must be within an aetheryte or aetheryte shard range.
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <returns></returns>
     [EzIPC]
     public bool AethernetTeleport(string destination)
     {
         if(IsBusy()) return false;
         TaskTryTpToAethernetDestination.Enqueue(destination);
         return true;
+    }
+
+    /// <summary>
+    /// Requests aethernet teleport to be executed by Place Name ID from <see cref="PlaceName"/> sheet, if possible. Must be within an aetheryte or aetheryte shard range. 
+    /// </summary>
+    /// <param name="placeNameRowId"></param>
+    /// <returns></returns>
+    [EzIPC]
+    public bool AethernetTeleportByPlaceNameId(uint placeNameRowId)
+    {
+        if(Svc.Data.GetExcelSheet<PlaceName>().TryGetRow(placeNameRowId, out var row))
+        {
+            return AethernetTeleport(row.Name.GetText());
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Requests aethernet teleport to be executed by ID from <see cref="Aetheryte"/> sheet, if possible. Must be within an aetheryte or aetheryte shard range. 
+    /// </summary>
+    /// <param name="aethernetSheetRowId"></param>
+    /// <returns></returns>
+    [EzIPC]
+    public bool AethernetTeleportById(uint aethernetSheetRowId)
+    {
+        var name = Utils.GetAethernetNameWithOverrides(aethernetSheetRowId);
+        if(name == null) return false;
+        return AethernetTeleport(name);
+    }
+
+    /// <summary>
+    /// Requests aethernet teleport to be executed by ID from <see cref="HousingAethernet"/> sheet, if possible. Must be within an aetheryte shard range. 
+    /// </summary>
+    /// <returns></returns>
+    [EzIPC]
+    public bool HousingAethernetTeleportById(uint housingAethernetSheetRow)
+    {
+        if(Svc.Data.GetExcelSheet<HousingAethernet>().TryGetRow(housingAethernetSheetRow, out var row))
+        {
+            return AethernetTeleport(row.PlaceName.Value.Name.GetText());
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Requests aethernet teleport to Firmament. Must be within a Foundation aetheryte range. 
+    /// </summary>
+    /// <returns></returns>
+    [EzIPC]
+    public bool AethernetTeleportToFirmament()
+    {
+        return AethernetTeleport(Utils.GetAethernetNameWithOverrides(TaskAetheryteAethernetTeleport.FirmamentAethernetId));
+    }
+
+    /// <summary>
+    /// Retrieves active aetheryte/aetheryte shard ID if present
+    /// </summary>
+    /// <returns></returns>
+    [EzIPC]
+    public uint GetActiveAetheryte()
+    {
+        if(P.ActiveAetheryte != null)
+        {
+            return P.ActiveAetheryte.Value.ID;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Retrieves active custom aetheryte ID if present
+    /// </summary>
+    /// <returns></returns>
+    [EzIPC]
+    public uint GetActiveCustomAetheryte()
+    {
+        if(S.Data.CustomAethernet.ActiveAetheryte != null)
+        {
+            return S.Data.CustomAethernet.ActiveAetheryte.Value.ID;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Retrieves active housing aetheryte shard ID if present
+    /// </summary>
+    /// <returns></returns>
+    [EzIPC]
+    public uint GetActiveResidentialAetheryte()
+    {
+        if(S.Data.ResidentialAethernet.ActiveAetheryte != null)
+        {
+            return S.Data.ResidentialAethernet.ActiveAetheryte.Value.ID;
+        }
+        return 0;
     }
 
     [EzIPC]
@@ -282,5 +405,46 @@ public class Provider
         return P.Territory;
     }
 
-    [EzIPCEvent] public Action OnHouseEnterError;
+    [EzIPC]
+    public bool CanAutoLogin() => Utils.CanAutoLogin();
+
+    [EzIPC]
+    public bool ConnectAndOpenCharaSelect(string charaName, string charaHomeWorld)
+    {
+        if(IsBusy())
+        {
+            return false;
+        }
+        return TaskConnectAndOpenCharaSelect.Enqueue(charaName, charaHomeWorld);
+    }
+
+    [EzIPC]
+    public bool InitiateTravelFromCharaSelectScreen(string charaName, string charaHomeWorld, string destination, bool noLogin)
+    {
+        if(IsBusy())
+        {
+            return false;
+        }
+        return IpcUtils.InitiateTravelFromCharaSelectScreenInternal(charaName, charaHomeWorld, destination, noLogin);
+    }
+
+    [EzIPC]
+    public bool CanInitiateTravelFromCharaSelectList()
+    {
+        return CharaSelectOverlay.TryGetValidCharaSelectListMenu(out var m);
+    }
+
+    [EzIPC]
+    public bool ConnectAndTravel(string charaName, string charaHomeWorld, string destination, bool noLogin)
+    {
+        if(IsBusy() || !CanAutoLogin())
+        {
+            return false;
+        }
+        ConnectAndOpenCharaSelect(charaName, charaHomeWorld);
+        P.TaskManager.Enqueue(() => IpcUtils.InitiateTravelFromCharaSelectScreenInternal(charaName, charaHomeWorld, destination, noLogin));
+        return true;
+    }
+
+    [EzIPCEvent] public System.Action OnHouseEnterError;
 }

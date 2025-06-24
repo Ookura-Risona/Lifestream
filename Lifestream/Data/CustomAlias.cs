@@ -10,6 +10,10 @@ public class CustomAlias : IFileSystemStorage
     public bool Enabled = true;
     public List<CustomAliasCommand> Commands = [];
 
+    public bool ShouldSerializeAlias() => Alias.Length > 0;
+    public bool ShouldSerializeEnabled() => Enabled != true;
+    public bool ShouldSerializeGUID() => GUID != Guid.Empty;
+
     public string GetCustomName() => null;
     public void SetCustomName(string s) { }
 
@@ -21,11 +25,12 @@ public class CustomAlias : IFileSystemStorage
             {
                 List<Vector3> append = [];
                 var cmd = Commands[i];
-                if(cmd.Kind.EqualsAny(CustomAliasKind.步行到坐标, CustomAliasKind.寻路到坐标, CustomAliasKind.Circular_movement) == true)
+                if(cmd.Kind.EqualsAny(CustomAliasKind.Move_to_point, CustomAliasKind.Navmesh_to_point, CustomAliasKind.Circular_movement) == true)
                 {
-                    while(Commands.SafeSelect(i + 1)?.Kind == CustomAliasKind.步行到坐标)
+                    while(Commands.SafeSelect(i + 1)?.Kind == CustomAliasKind.Move_to_point)
                     {
-                        append.Add(Commands[i + 1].Point);
+                        var c = Commands[i + 1];
+                        append.Add(c.Point.Scatter(c.Scatter));
                         i++;
                     }
                 }

@@ -54,6 +54,7 @@ public class Config : IEzConfig
     public bool InstanceSwitcherRepeat = true;
     public int InstanceButtonHeight = 10;
     public bool UseSprintPeloton = true;
+    public bool UsePeloton = true;
     public bool EnableFlydownInstance = true;
     public bool DisplayChatTeleport = false;
     public bool DisplayPopupNotifications = true;
@@ -78,8 +79,17 @@ public class Config : IEzConfig
     public bool TerminateSelfPartyFinder = false;
     public Dictionary<ulong, string> CharaMap = [];
     public bool UseMount = true;
+    public int Mount = 0;
     public bool WotsitIntegrationEnabled = true;
     public WotsitIntegrationIncludedItems WotsitIntegrationIncludes = new();
     public bool EnableDtrBar = false;
     public Dictionary<ulong, (int Territory, int Ward, int Plot)> PreferredSharedEstates = [];
+    public bool LeftAlignButtons = false;
+    public int LeftAlignPadding = 0;
+    public LiCommandBehavior LiCommandBehavior = LiCommandBehavior.Return_to_Home_World;
+    public bool EnableNotifications = true;
+    public bool ProgressOverlayToTop = false;
+    public bool AllowCustomOverrides = false;
+    public bool DisableMapClickOtherTerritory = false;
+    public bool EnableAutoCompletion = false;
 }

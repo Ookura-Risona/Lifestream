@@ -1,14 +1,10 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.Automation.NeoTaskManager.Tasks;
-using ECommons.GameFunctions;
 using ECommons.GameHelpers;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lifestream.Data;
-using Lifestream.Tasks.SameWorld;
 using Lifestream.Tasks.Utility;
 
 namespace Lifestream.Tasks.Shortcuts;
@@ -126,10 +122,10 @@ public static unsafe class TaskISShortcut
                     return true;
                 }
             });
-            P.TaskManager.Enqueue(P.VnavmeshManager.IsReady);
+            P.TaskManager.Enqueue(S.Ipc.VnavmeshIPC.IsReady);
             P.TaskManager.Enqueue(() =>
             {
-                var task = P.VnavmeshManager.Pathfind(Player.Position, point, false);
+                var task = S.Ipc.VnavmeshIPC.Pathfind(Player.Position, point, false);
                 P.TaskManager.Enqueue(() =>
                 {
                     if(!task.IsCompleted) return false;

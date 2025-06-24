@@ -2,7 +2,6 @@
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Objects.Enums;
 using ECommons.Configuration;
-using ECommons.GameHelpers;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -15,17 +14,17 @@ public unsafe class InstanceHandler : IDisposable
     {
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "SelectString", OnPostUpdate);
         var gv = CSFramework.Instance()->GameVersionString;
-        if(gv != null && gv != P.Config.GameVersion)
+        if(!gv.IsNullOrEmpty() && gv != C.GameVersion)
         {
-            PluginLog.Information($"New game version detected, new {gv}, old {P.Config.GameVersion}");
-            P.Config.GameVersion = gv;
-            P.Config.PublicInstances = [];
+            PluginLog.Information($"New game version detected, new {gv}, old {C.GameVersion}");
+            C.GameVersion = gv;
+            C.PublicInstances = [];
         }
     }
 
     public bool CanChangeInstance()
     {
-        return P.Config.ShowInstanceSwitcher && !Utils.IsDisallowedToUseAethernet() && !P.TaskManager.IsBusy && !IsOccupied() && S.InstanceHandler.GetInstance() != 0 && TaskChangeInstance.GetAetheryte() != null;
+        return C.ShowInstanceSwitcher && !Utils.IsDisallowedToUseAethernet() && !P.TaskManager.IsBusy && !IsOccupied() && S.InstanceHandler.GetInstance() != 0 && TaskChangeInstance.GetAetheryte() != null;
     }
 
     private void OnPostUpdate(AddonEvent type, AddonArgs args)
@@ -39,20 +38,20 @@ public unsafe class InstanceHandler : IDisposable
             && (m.Entries.Any(x => x.Text.ContainsAny(Lang.TravelToInstancedArea)) || m.Text == Lang.ToReduceCongestion)
             )
         {
-            var inst = *P.Memory.MaxInstances;
+            var inst = *S.Memory.MaxInstances;
             if(inst < 2 || inst > 9)
             {
                 if(EzThrottler.Throttle("InstanceWarning", 5000)) PluginLog.Warning($"Instance count is wrong, received {inst}, please report to developer");
             }
             else
             {
-                if(P.Config.PublicInstances.TryGetValue(P.Territory, out var value) && value == inst)
+                if(C.PublicInstances.TryGetValue(P.Territory, out var value) && value == inst)
                 {
                     //
                 }
                 else
                 {
-                    P.Config.PublicInstances[P.Territory] = inst;
+                    C.PublicInstances[P.Territory] = inst;
                     EzConfig.Save();
                 }
             }
@@ -66,7 +65,7 @@ public unsafe class InstanceHandler : IDisposable
 
     public bool InstancesInitizliaed(out int maxInstances)
     {
-        return P.Config.PublicInstances.TryGetValue(P.Territory, out maxInstances);
+        return C.PublicInstances.TryGetValue(P.Territory, out maxInstances);
     }
 
     public void Dispose()

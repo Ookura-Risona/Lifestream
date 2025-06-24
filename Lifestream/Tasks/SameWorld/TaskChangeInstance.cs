@@ -24,13 +24,13 @@ public static unsafe class TaskChangeInstance
             new(() => !IsOccupied()),
             new(() =>
             {
-                if(P.Config.InstanceSwitcherRepeat && number != S.InstanceHandler.GetInstance())
+                if(C.InstanceSwitcherRepeat && number != S.InstanceHandler.GetInstance())
                 {
                     Enqueue(number);
                 }
             })
         };
-        if(P.Config.EnableFlydownInstance)
+        if(C.EnableFlydownInstance)
         {
             P.TaskManager.Enqueue(() =>
             {
@@ -40,7 +40,7 @@ public static unsafe class TaskChangeInstance
                 }
                 if(EzThrottler.Throttle("DropFlight", 1000))
                 {
-                    Chat.Instance.ExecuteCommand($"/generalaction {Svc.Data.GetExcelSheet<GeneralAction>().GetRow(23).Name}");
+                    Chat.ExecuteCommand($"/generalaction {Svc.Data.GetExcelSheet<GeneralAction>().GetRow(23).Name}");
                 }
                 return false;
             });

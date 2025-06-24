@@ -11,6 +11,7 @@ global using ECommons.ImGuiMethods;
 global using ECommons.Logging;
 global using ECommons.Schedulers;
 global using ImGuiNET;
+global using Lifestream.CSExtensions;
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;

@@ -7,7 +7,7 @@ public class SplatoonManager
     private ulong Frame = 0;
     private SplatoonCache Cache = new();
 
-    public SplatoonManager()
+    private SplatoonManager()
     {
         Splatoon.SetOnConnect(Reset);
         if(Splatoon.IsConnected()) Reset();
@@ -90,6 +90,7 @@ public class SplatoonManager
                 color = ImGuiColors.DalamudRed.ToUint(),
                 overlayVOffset = 1f,
                 overlayText = overlay,
+                Filled = false,
             };
             Cache.WaymarkPointCache.Add(ret);
         }

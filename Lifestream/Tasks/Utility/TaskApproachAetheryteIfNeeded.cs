@@ -11,10 +11,10 @@ public static class TaskApproachAetheryteIfNeeded
     {
         P.TaskManager.Enqueue(() =>
         {
-            if((P.ActiveAetheryte == null || !P.ActiveAetheryte.Value.IsAetheryte) && Utils.GetReachableAetheryte(x => x.ObjectKind == ObjectKind.Aetheryte) != null)
+            if(Utils.ApproachConditionIsMet())
             {
                 P.TaskManager.InsertMulti(
-                    P.Config.WaitForScreenReady ? new(Utils.WaitForScreen) : null,
+                    C.WaitForScreenReady ? new(Utils.WaitForScreen) : null,
                     new FrameDelayTask(10),
                     new(TargetReachableAetheryte),
                     new(WorldChange.LockOn),

@@ -37,9 +37,9 @@ public static unsafe class TabAddressBook
     {
         InputWardDetailDialog.Draw();
         var selector = S.AddressBookFileSystemManager.FileSystem.Selector;
-        selector.Draw(150f);
+        selector.Draw(150f.Scale());
         ImGui.SameLine();
-        if(P.Config.AddressBookFolders.Count == 0)
+        if(C.AddressBookFolders.Count == 0)
         {
             var book = new AddressBookFolder() { IsDefault = true };
             S.AddressBookFileSystemManager.FileSystem.Create(book, "默认簿", out _);
@@ -53,7 +53,7 @@ public static unsafe class TabAddressBook
             }
             else
             {
-                if(P.Config.AddressBookFolders.TryGetFirst(x => x.IsDefault, out var value))
+                if(C.AddressBookFolders.TryGetFirst(x => x.IsDefault, out var value))
                 {
                     selector.SelectByValue(value);
                 }
@@ -144,7 +144,7 @@ public static unsafe class TabAddressBook
                     }
                 }
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(100f);
+                ImGui.SetNextItemWidth(100f.Scale());
                 ImGuiEx.EnumCombo("##sort", ref book.SortMode, SortModeNames);
                 ImGuiEx.Tooltip($"选择此地址簿的排序模式");
                 ImGui.SameLine();
@@ -152,7 +152,7 @@ public static unsafe class TabAddressBook
                 {
                     if(book.IsDefault)
                     {
-                        P.Config.AddressBookFolders.Where(z => z != book).Each(z => z.IsDefault = false);
+                        C.AddressBookFolders.Where(z => z != book).Each(z => z.IsDefault = false);
                     }
                 }
                 ImGuiEx.Tooltip($"当您在游戏中首次打开插件时，默认地址簿会自动打开。");
@@ -309,7 +309,7 @@ public static unsafe class TabAddressBook
                 }
                 else
                 {
-                    if(!P.DataStore.DCWorlds.Contains(ExcelWorldHelper.GetName(entry.World))) wcol = ImGuiColors.DalamudGrey3;
+                    if(!S.Data.DataStore.DCWorlds.Contains(ExcelWorldHelper.GetName(entry.World))) wcol = ImGuiColors.DalamudGrey3;
                 }
                 if(Player.Available && Player.Object.CurrentWorld.RowId == entry.World) wcol = new Vector4(0.9f, 0.9f, 0.9f, 1f);
 
